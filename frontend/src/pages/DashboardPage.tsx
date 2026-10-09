@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { dashboardService } from '../services/dashboardService';
 import { deploymentService } from '../services/deploymentService';
 import { DashboardSummary } from '../types';
-import { StatusBadge, PriorityBadge } from '../components/common/Badge';
+import { StatusBadge, PriorityBadge, EnvironmentBadge } from '../components/common/Badge';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../components/common/Toast';
 import {
@@ -15,6 +15,9 @@ import {
   CheckCircle2,
   Clock,
   ArrowUpRight,
+  ShieldCheck,
+  Activity,
+  Layers,
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -33,6 +36,7 @@ import { Link } from 'react-router-dom';
 export const DashboardPage: React.FC = () => {
   const [data, setData] = useState<DashboardSummary | null>(null);
   const [loading, setLoading] = useState(true);
+  const [lastUpdated, setLastUpdated] = useState<string>('');
   const { isReviewer, user } = useAuth();
   const { success, error } = useToast();
 
@@ -41,8 +45,9 @@ export const DashboardPage: React.FC = () => {
       setLoading(true);
       const res = await dashboardService.getSummary();
       setData(res);
+      setLastUpdated(new Date().toLocaleTimeString());
     } catch (err: any) {
-      error('Failed to load dashboard metrics.');
+      error('Failed to load real-time dashboard metrics.');
     } finally {
       setLoading(false);
     }
@@ -54,26 +59,29 @@ export const DashboardPage: React.FC = () => {
 
   const handleQuickApprove = async (id: string) => {
     try {
-      await deploymentService.approveDeployment(id, 'Approved via Executive Dashboard quick review.');
+      await deploymentService.approveDeployment(
+        id,
+        'Approved via Executive Command Center four-eyes verification.'
+      );
       success('Deployment approved successfully.');
       loadData();
     } catch (err: any) {
-      error(err.response?.data?.message || 'Approval failed.');
+      error(err.response?.data?.message || 'Approval sign-off failed.');
     }
   };
 
   if (loading) {
     return (
       <div className="space-y-6">
-        <div className="h-8 w-64 bg-slate-900 rounded animate-pulse"></div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="h-8 w-64 bg-slate-900 rounded animate-pulse" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="h-28 bg-slate-900 rounded-lg border border-slate-800 animate-pulse"></div>
+            <div key={i} className="h-32 bg-slate-900 rounded-lg border border-slate-800 animate-pulse" />
           ))}
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="h-80 bg-slate-900 rounded-lg border border-slate-800 animate-pulse"></div>
-          <div className="h-80 bg-slate-900 rounded-lg border border-slate-800 animate-pulse"></div>
+          <div className="h-80 bg-slate-900 rounded-lg border border-slate-800 animate-pulse" />
+          <div className="h-80 bg-slate-900 rounded-lg border border-slate-800 animate-pulse" />
         </div>
       </div>
     );
@@ -81,99 +89,295 @@ export const DashboardPage: React.FC = () => {
 
   if (!data) return null;
 
+  const hasUrgentItems =
+    data.pendingDeployments > 0 || data.criticalRisks > 0 || data.overdueTasks > 0;
+
   return (
-    <div className="space-y-8">
-      {/* Header */}
+    <div className="space-y-6">
+      {/* Header & Controls */}
       <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 border-b border-slate-800 pb-5">
         <div>
-          <h1 className="text-xl font-bold tracking-tight text-white flex items-center gap-2">
-            Governance & Deployment Control Center
-          </h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-xl font-bold tracking-tight text-white">
+              Executive Release & Governance Command Center
+            </h1>
+            <span className="hidden md:inline-flex items-center gap-1 px-2 py-0.5 rounded bg-sky-950/80 text-sky-400 text-[10px] font-mono border border-sky-800/80">
+              <Activity className="w-3 h-3" /> LIVE AUDIT STREAM
+            </span>
+          </div>
           <p className="text-xs text-slate-400 mt-1">
-            Real-time status monitoring, risk exposure, and release approval pipeline.
+            Real-time pipeline posture, four-eyes gate enforcement, and systemic risk telemetry.
           </p>
         </div>
-        <div className="flex items-center gap-3">
+
+        <div className="flex items-center gap-2.5">
+          {lastUpdated && (
+            <span className="hidden sm:inline-block text-[11px] text-slate-400 font-mono">
+              Synced {lastUpdated}
+            </span>
+          )}
           <button
+            type="button"
             onClick={loadData}
-            className="px-3 py-1.5 text-xs font-medium text-slate-300 bg-slate-900 hover:bg-slate-800 border border-slate-700 rounded-md transition flex items-center gap-1.5"
+            className="px-3 py-1.5 text-xs font-semibold text-slate-300 bg-slate-900 hover:bg-slate-800 border border-slate-700 rounded-md transition flex items-center gap-1.5 shadow-xs"
           >
-            <RotateCcw className="w-3.5 h-3.5" /> Refresh Metrics
+            <RotateCcw className="w-3.5 h-3.5" /> Refresh
           </button>
           <Link
             to="/deployments"
-            className="px-3 py-1.5 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-500 rounded-md transition flex items-center gap-1.5 shadow-sm"
+            className="px-3 py-1.5 text-xs font-semibold text-white bg-sky-600 hover:bg-sky-500 rounded-md transition flex items-center gap-1.5 shadow-xs"
           >
             <Rocket className="w-3.5 h-3.5" /> Request Deployment
           </Link>
         </div>
       </div>
 
-      {/* Top 4 KPI Metrics Cards */}
+      {/* Operational Attention Banner */}
+      {hasUrgentItems && (
+        <div className="p-3.5 rounded-lg bg-amber-950/30 border border-amber-800/60 flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs">
+          <div className="flex items-start md:items-center gap-2.5">
+            <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5 md:mt-0" />
+            <span className="text-slate-200">
+              <strong className="text-amber-300 font-semibold">Immediate Operational Oversight:</strong>{' '}
+              {data.pendingDeployments > 0 && `${data.pendingDeployments} release(s) pending approval`}
+              {data.pendingDeployments > 0 && data.criticalRisks > 0 && ' • '}
+              {data.criticalRisks > 0 && `${data.criticalRisks} critical risk exposure(s)`}
+              {(data.pendingDeployments > 0 || data.criticalRisks > 0) && data.overdueTasks > 0 && ' • '}
+              {data.overdueTasks > 0 && `${data.overdueTasks} overdue sprint deliverable(s)`}
+            </span>
+          </div>
+          <div className="flex items-center gap-3 shrink-0 font-mono text-[11px]">
+            {data.pendingDeployments > 0 && (
+              <Link to="/deployments" className="text-amber-400 hover:underline">
+                Review Releases →
+              </Link>
+            )}
+            {data.criticalRisks > 0 && (
+              <Link to="/risks" className="text-rose-400 hover:underline">
+                Inspect Risks →
+              </Link>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* 4 Executive KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Projects KPI */}
-        <div className="bg-slate-900 border border-slate-800 rounded-lg p-5">
+        {/* KPI 1: Active Projects */}
+        <div className="bg-slate-900 border border-slate-800 rounded-lg p-5 hover:border-slate-700 transition">
           <div className="flex items-center justify-between text-slate-400 text-xs font-mono uppercase tracking-wider">
-            <span>Active Projects</span>
-            <FolderGit2 className="w-4 h-4 text-blue-400" />
+            <span>Governed Projects</span>
+            <FolderGit2 className="w-4 h-4 text-sky-400" />
           </div>
           <div className="mt-3 flex items-baseline gap-2">
-            <span className="text-2xl font-bold text-white tracking-tight">{data.activeProjects}</span>
-            <span className="text-xs text-slate-400">/ {data.totalProjects} total</span>
+            <span className="text-2xl font-bold text-white tracking-tight tabular-nums">
+              {data.activeProjects}
+            </span>
+            <span className="text-xs text-slate-400 font-mono">/ {data.totalProjects} active</span>
           </div>
           <div className="mt-2 text-[11px] text-slate-400 flex items-center gap-2">
-            <span className="text-emerald-400 font-medium">{data.completedProjects} Completed</span>
+            <span className="text-emerald-400 font-medium font-mono">{data.completedProjects} Completed</span>
             <span>•</span>
-            <span className="text-rose-400 font-medium">{data.blockedProjects} Blocked</span>
+            <span className={`font-mono ${data.blockedProjects > 0 ? 'text-rose-400 font-medium' : 'text-slate-400'}`}>
+              {data.blockedProjects} Blocked
+            </span>
           </div>
         </div>
 
-        {/* Deployments KPI */}
-        <div className="bg-slate-900 border border-slate-800 rounded-lg p-5">
+        {/* KPI 2: Pending Releases */}
+        <div className="bg-slate-900 border border-slate-800 rounded-lg p-5 hover:border-slate-700 transition">
           <div className="flex items-center justify-between text-slate-400 text-xs font-mono uppercase tracking-wider">
-            <span>Pending Approvals</span>
+            <span>Pending Releases</span>
             <Rocket className="w-4 h-4 text-amber-400" />
           </div>
           <div className="mt-3 flex items-baseline gap-2">
-            <span className="text-2xl font-bold text-amber-400 tracking-tight">{data.pendingDeployments}</span>
-            <span className="text-xs text-slate-400">awaiting review</span>
+            <span className={`text-2xl font-bold tracking-tight tabular-nums ${data.pendingDeployments > 0 ? 'text-amber-400' : 'text-white'}`}>
+              {data.pendingDeployments}
+            </span>
+            <span className="text-xs text-slate-400 font-mono">awaiting gate sign-off</span>
           </div>
           <div className="mt-2 text-[11px] text-slate-400 flex items-center gap-2">
-            <span className="text-emerald-400 font-medium">{data.successfulDeployments} Successful</span>
+            <span className="text-emerald-400 font-medium font-mono">{data.successfulDeployments} Success</span>
             <span>•</span>
-            <span className="text-rose-400 font-medium">{data.failedDeployments} Failed</span>
+            <span className={`font-mono ${data.failedDeployments > 0 ? 'text-rose-400 font-medium' : 'text-slate-400'}`}>
+              {data.failedDeployments} Failed
+            </span>
           </div>
         </div>
 
-        {/* Risks KPI */}
-        <div className="bg-slate-900 border border-slate-800 rounded-lg p-5">
+        {/* KPI 3: Critical Risks */}
+        <div className="bg-slate-900 border border-slate-800 rounded-lg p-5 hover:border-slate-700 transition">
           <div className="flex items-center justify-between text-slate-400 text-xs font-mono uppercase tracking-wider">
-            <span>Critical / High Risks</span>
+            <span>Critical Exposure</span>
             <ShieldAlert className="w-4 h-4 text-rose-400" />
           </div>
           <div className="mt-3 flex items-baseline gap-2">
-            <span className="text-2xl font-bold text-rose-400 tracking-tight">{data.criticalRisks}</span>
-            <span className="text-xs text-slate-400">/ {data.openRisks} open</span>
+            <span className={`text-2xl font-bold tracking-tight tabular-nums ${data.criticalRisks > 0 ? 'text-rose-400' : 'text-white'}`}>
+              {data.criticalRisks}
+            </span>
+            <span className="text-xs text-slate-400 font-mono">/ {data.openRisks} open risks</span>
           </div>
           <div className="mt-2 text-[11px] text-slate-400">
-            Total registered risks: <span className="font-semibold text-slate-300">{data.totalRisks}</span>
+            Total registered controls: <span className="font-semibold text-slate-300 font-mono">{data.totalRisks}</span>
           </div>
         </div>
 
-        {/* Tasks KPI */}
-        <div className="bg-slate-900 border border-slate-800 rounded-lg p-5">
+        {/* KPI 4: Overdue Sprint Tasks */}
+        <div className="bg-slate-900 border border-slate-800 rounded-lg p-5 hover:border-slate-700 transition">
           <div className="flex items-center justify-between text-slate-400 text-xs font-mono uppercase tracking-wider">
-            <span>Overdue Agile Tasks</span>
-            <CheckSquare className="w-4 h-4 text-indigo-400" />
+            <span>Overdue Deliverables</span>
+            <CheckSquare className="w-4 h-4 text-sky-400" />
           </div>
           <div className="mt-3 flex items-baseline gap-2">
-            <span className="text-2xl font-bold text-rose-400 tracking-tight">{data.overdueTasks}</span>
-            <span className="text-xs text-slate-400">past deadline</span>
+            <span className={`text-2xl font-bold tracking-tight tabular-nums ${data.overdueTasks > 0 ? 'text-rose-400' : 'text-white'}`}>
+              {data.overdueTasks}
+            </span>
+            <span className="text-xs text-slate-400 font-mono">past target deadline</span>
           </div>
           <div className="mt-2 text-[11px] text-slate-400 flex items-center gap-2">
-            <span className="text-amber-400 font-medium">{data.blockedTasks} Blocked</span>
+            <span className={`font-mono ${data.blockedTasks > 0 ? 'text-amber-400 font-medium' : 'text-slate-400'}`}>
+              {data.blockedTasks} Blocked
+            </span>
             <span>•</span>
-            <span className="text-slate-400">{data.totalTasks} Total Tasks</span>
+            <span className="text-slate-400 font-mono">{data.totalTasks} Total Tasks</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Primary Governance Split: Pending Deployments & Critical Risk Register */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Recent / Pending Deployments */}
+        <div className="bg-slate-900 border border-slate-800 rounded-lg overflow-hidden flex flex-col justify-between">
+          <div>
+            <div className="px-5 py-3.5 border-b border-slate-800 flex items-center justify-between bg-slate-900/90">
+              <div className="flex items-center gap-2">
+                <Rocket className="w-4 h-4 text-sky-400" />
+                <h3 className="text-sm font-semibold text-slate-200">Release Pipeline Status</h3>
+              </div>
+              <Link
+                to="/deployments"
+                className="text-xs text-sky-400 hover:text-sky-300 flex items-center gap-1 font-medium font-mono"
+              >
+                View Pipeline →
+              </Link>
+            </div>
+            <div className="divide-y divide-slate-800/80">
+              {data.recentDeployments.length === 0 ? (
+                <div className="p-8 text-center text-xs text-slate-400">
+                  Zero active deployments recorded in current cycle.
+                </div>
+              ) : (
+                data.recentDeployments.map((d) => {
+                  const isRequester = d.requestedById === user?.id;
+                  const canQuickApprove =
+                    isReviewer && d.status === 'UNDER_REVIEW' && !isRequester;
+
+                  return (
+                    <div
+                      key={d.id}
+                      className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-slate-850/40 transition"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <div className="flex flex-wrap items-center gap-2 mb-1">
+                          <span className="font-mono text-[11px] font-bold px-1.5 py-0.5 rounded bg-slate-800 text-sky-300 border border-slate-700">
+                            {d.projectKey}
+                          </span>
+                          <span className="font-mono text-[11px] text-white font-semibold">
+                            {d.version}
+                          </span>
+                          <EnvironmentBadge environment={d.environment} />
+                          <StatusBadge status={d.status} />
+                        </div>
+                        <div className="text-xs text-slate-300 truncate font-medium">
+                          {d.reason}
+                        </div>
+                        <div className="text-[11px] text-slate-400 mt-1 flex items-center gap-2 font-mono">
+                          <span>By: {d.requestedByFullName}</span>
+                          <span>•</span>
+                          <span>{d.createdAt}</span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 shrink-0">
+                        {canQuickApprove && (
+                          <button
+                            type="button"
+                            onClick={() => handleQuickApprove(d.id)}
+                            className="px-2.5 py-1 text-xs font-semibold text-emerald-300 bg-emerald-950/80 border border-emerald-800/90 rounded hover:bg-emerald-900 transition flex items-center gap-1"
+                          >
+                            <CheckCircle2 className="w-3.5 h-3.5" /> Sign-off
+                          </button>
+                        )}
+                        <Link
+                          to={`/deployments/${d.id}`}
+                          className="px-2.5 py-1 text-xs font-medium text-slate-300 bg-slate-800 border border-slate-700 rounded hover:bg-slate-750 transition"
+                        >
+                          Dossier
+                        </Link>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Critical Risks Overview */}
+        <div className="bg-slate-900 border border-slate-800 rounded-lg overflow-hidden flex flex-col justify-between">
+          <div>
+            <div className="px-5 py-3.5 border-b border-slate-800 flex items-center justify-between bg-slate-900/90">
+              <div className="flex items-center gap-2">
+                <ShieldAlert className="w-4 h-4 text-rose-400" />
+                <h3 className="text-sm font-semibold text-slate-200">Systemic Risk Exposure</h3>
+              </div>
+              <Link
+                to="/risks"
+                className="text-xs text-sky-400 hover:text-sky-300 flex items-center gap-1 font-medium font-mono"
+              >
+                Risk Register →
+              </Link>
+            </div>
+            <div className="divide-y divide-slate-800/80">
+              {data.criticalRiskList.length === 0 ? (
+                <div className="p-8 text-center text-xs text-slate-400">
+                  Zero critical exposures detected. All parameters within regulatory tolerance.
+                </div>
+              ) : (
+                data.criticalRiskList.map((r) => (
+                  <div
+                    key={r.id}
+                    className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-slate-850/40 transition"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="font-mono text-[11px] font-bold px-1.5 py-0.5 rounded bg-slate-800 text-sky-300 border border-slate-700">
+                          {r.projectKey}
+                        </span>
+                        <PriorityBadge priority={r.severity} />
+                        <span className="text-[11px] font-mono px-1.5 py-0.5 rounded bg-rose-950/80 text-rose-300 border border-rose-800 font-bold">
+                          Score: {r.riskScore} (P:{r.probability} × I:{r.impact})
+                        </span>
+                      </div>
+                      <div className="text-xs text-slate-200 font-semibold truncate">
+                        {r.title}
+                      </div>
+                      <div className="text-[11px] text-slate-400 mt-1 flex items-center gap-2 font-mono">
+                        <span>Owner: {r.ownerFullName || 'Unassigned'}</span>
+                        <span>•</span>
+                        <span>Status: {r.status}</span>
+                      </div>
+                    </div>
+                    <Link
+                      to="/risks"
+                      className="px-2.5 py-1 text-xs font-medium text-slate-300 bg-slate-800 border border-slate-700 rounded hover:bg-slate-750 transition self-start sm:self-center"
+                    >
+                      Mitigate
+                    </Link>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -192,11 +396,17 @@ export const DashboardPage: React.FC = () => {
                 <XAxis dataKey="name" stroke="#64748b" fontSize={11} tickLine={false} />
                 <YAxis stroke="#64748b" fontSize={11} tickLine={false} allowDecimals={false} />
                 <Tooltip
-                  contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '6px', fontSize: '12px' }}
+                  contentStyle={{
+                    backgroundColor: '#0b1120',
+                    borderColor: '#1e293b',
+                    borderRadius: '6px',
+                    fontSize: '12px',
+                    color: '#f8fafc',
+                  }}
                 />
-                <Bar dataKey="value" radius={[4, 4, 0, 0]}>
+                <Bar dataKey="value" radius={[3, 3, 0, 0]}>
                   {data.deploymentsByStatus.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color || '#6366f1'} />
+                    <Cell key={`cell-${index}`} fill={entry.color || '#0284c7'} />
                   ))}
                 </Bar>
               </BarChart>
@@ -225,7 +435,13 @@ export const DashboardPage: React.FC = () => {
                   ))}
                 </Pie>
                 <Tooltip
-                  contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '6px', fontSize: '12px' }}
+                  contentStyle={{
+                    backgroundColor: '#0b1120',
+                    borderColor: '#1e293b',
+                    borderRadius: '6px',
+                    fontSize: '12px',
+                    color: '#f8fafc',
+                  }}
                 />
                 <Legend
                   verticalAlign="bottom"
@@ -250,11 +466,17 @@ export const DashboardPage: React.FC = () => {
                 <XAxis dataKey="name" stroke="#64748b" fontSize={11} tickLine={false} />
                 <YAxis stroke="#64748b" fontSize={11} tickLine={false} allowDecimals={false} />
                 <Tooltip
-                  contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '6px', fontSize: '12px' }}
+                  contentStyle={{
+                    backgroundColor: '#0b1120',
+                    borderColor: '#1e293b',
+                    borderRadius: '6px',
+                    fontSize: '12px',
+                    color: '#f8fafc',
+                  }}
                 />
-                <Bar dataKey="value" radius={[4, 4, 0, 0]}>
+                <Bar dataKey="value" radius={[3, 3, 0, 0]}>
                   {data.projectsByStatus.map((entry, index) => (
-                    <Cell key={`cell-proj-${index}`} fill={entry.color || '#3b82f6'} />
+                    <Cell key={`cell-proj-${index}`} fill={entry.color || '#0ea5e9'} />
                   ))}
                 </Bar>
               </BarChart>
@@ -274,96 +496,21 @@ export const DashboardPage: React.FC = () => {
                 <XAxis dataKey="name" stroke="#64748b" fontSize={11} tickLine={false} />
                 <YAxis stroke="#64748b" fontSize={11} tickLine={false} allowDecimals={false} />
                 <Tooltip
-                  contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '6px', fontSize: '12px' }}
+                  contentStyle={{
+                    backgroundColor: '#0b1120',
+                    borderColor: '#1e293b',
+                    borderRadius: '6px',
+                    fontSize: '12px',
+                    color: '#f8fafc',
+                  }}
                 />
-                <Bar dataKey="value" radius={[4, 4, 0, 0]}>
+                <Bar dataKey="value" radius={[3, 3, 0, 0]}>
                   {data.tasksByStatus.map((entry, index) => (
                     <Cell key={`cell-task-${index}`} fill={entry.color || '#10b981'} />
                   ))}
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
-          </div>
-        </div>
-      </div>
-
-      {/* Dual Activity Streams: Recent Deployments & Critical Risks */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Recent Deployments */}
-        <div className="bg-slate-900 border border-slate-800 rounded-lg overflow-hidden">
-          <div className="px-5 py-4 border-b border-slate-800 flex items-center justify-between bg-slate-900/60">
-            <h3 className="text-sm font-semibold text-slate-200 flex items-center gap-2">
-              <Rocket className="w-4 h-4 text-indigo-400" /> Recent Deployments
-            </h3>
-            <Link to="/deployments" className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1 font-medium">
-              View all <ArrowUpRight className="w-3.5 h-3.5" />
-            </Link>
-          </div>
-          <div className="divide-y divide-slate-800">
-            {data.recentDeployments.length === 0 ? (
-              <div className="p-6 text-center text-xs text-slate-400">No deployments recorded.</div>
-            ) : (
-              data.recentDeployments.map((d) => (
-                <div key={d.id} className="p-4 flex items-center justify-between gap-4 hover:bg-slate-850/50 transition">
-                  <div>
-                    <div className="flex items-center gap-2 font-mono text-xs">
-                      <span className="font-semibold text-white">{d.projectName}</span>
-                      <span className="text-slate-400">({d.projectKey})</span>
-                      <span className="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 text-[11px]">{d.version}</span>
-                    </div>
-                    <div className="text-xs text-slate-400 mt-1 flex items-center gap-2">
-                      <span>Env: <strong className="text-slate-200">{d.environment}</strong></span>
-                      <span>•</span>
-                      <span>By: {d.requestedByFullName}</span>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <StatusBadge status={d.status} />
-                    {isReviewer && d.status === 'UNDER_REVIEW' && d.requestedById !== user?.id && (
-                      <button
-                        onClick={() => handleQuickApprove(d.id)}
-                        className="px-2.5 py-1 text-xs font-medium text-emerald-400 bg-emerald-950/60 border border-emerald-800/80 rounded hover:bg-emerald-900/60 transition"
-                      >
-                        Approve
-                      </button>
-                    )}
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-
-        {/* Critical Risks */}
-        <div className="bg-slate-900 border border-slate-800 rounded-lg overflow-hidden">
-          <div className="px-5 py-4 border-b border-slate-800 flex items-center justify-between bg-slate-900/60">
-            <h3 className="text-sm font-semibold text-slate-200 flex items-center gap-2">
-              <AlertTriangle className="w-4 h-4 text-rose-400" /> Active Governance Risks
-            </h3>
-            <Link to="/risks" className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1 font-medium">
-              View matrix <ArrowUpRight className="w-3.5 h-3.5" />
-            </Link>
-          </div>
-          <div className="divide-y divide-slate-800">
-            {data.criticalRiskList.length === 0 ? (
-              <div className="p-6 text-center text-xs text-slate-400">Zero critical risks detected.</div>
-            ) : (
-              data.criticalRiskList.map((r) => (
-                <div key={r.id} className="p-4 flex items-center justify-between gap-4 hover:bg-slate-850/50 transition">
-                  <div className="flex-1">
-                    <div className="text-xs font-semibold text-slate-200">{r.title}</div>
-                    <div className="text-[11px] text-slate-400 mt-1 flex items-center gap-2">
-                      <span className="font-mono">{r.projectKey}</span>
-                      <span>•</span>
-                      <span>Score: <strong className="text-rose-400">{r.riskScore}</strong> (P:{r.probability} × I:{r.impact})</span>
-                    </div>
-                  </div>
-                  <div>
-                    <PriorityBadge priority={r.severity} />
-                  </div>
-                </div>
-              ))
-            )}
           </div>
         </div>
       </div>

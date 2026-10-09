@@ -121,9 +121,12 @@ export const TasksPage: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 border-b border-slate-800 pb-5">
         <div>
-          <h1 className="text-xl font-bold tracking-tight text-white flex items-center gap-2">
-            <CheckSquare className="w-5 h-5 text-indigo-400" /> Agile Task & Sprint Tracker
-          </h1>
+          <div className="flex items-center gap-2">
+            <CheckSquare className="w-5 h-5 text-sky-400" />
+            <h1 className="text-xl font-bold tracking-tight text-white">
+              Agile Task & Sprint Delivery Tracker
+            </h1>
+          </div>
           <p className="text-xs text-slate-400 mt-1">
             Task dependencies, blockers, and regulatory milestone delivery controls.
           </p>
@@ -131,8 +134,9 @@ export const TasksPage: React.FC = () => {
 
         {isDeveloper && (
           <button
+            type="button"
             onClick={() => setIsCreateModalOpen(true)}
-            className="px-3.5 py-2 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-500 rounded-md transition flex items-center gap-2 shadow-sm"
+            className="px-3.5 py-2 text-xs font-semibold text-white bg-sky-600 hover:bg-sky-500 rounded-md transition flex items-center gap-2 shadow-xs"
           >
             <Plus className="w-4 h-4" /> New Task
           </button>
@@ -147,7 +151,7 @@ export const TasksPage: React.FC = () => {
         <select
           value={selectedProject}
           onChange={(e) => setSelectedProject(e.target.value)}
-          className="bg-slate-950 border border-slate-800 rounded px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500"
+          className="bg-slate-950 border border-slate-800 rounded px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-sky-500 font-mono"
         >
           <option value="ALL">All Projects</option>
           {projects.map((p) => (
@@ -161,7 +165,7 @@ export const TasksPage: React.FC = () => {
         <select
           value={selectedStatus}
           onChange={(e) => setSelectedStatus(e.target.value)}
-          className="bg-slate-950 border border-slate-800 rounded px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500"
+          className="bg-slate-950 border border-slate-800 rounded px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-sky-500 font-mono"
         >
           <option value="ALL">All Statuses</option>
           <option value="TODO">TO DO</option>
@@ -177,9 +181,9 @@ export const TasksPage: React.FC = () => {
             type="checkbox"
             checked={overdueOnly}
             onChange={(e) => setOverdueOnly(e.target.checked)}
-            className="rounded bg-slate-950 border-slate-700 text-indigo-600 focus:ring-0"
+            className="rounded bg-slate-950 border-slate-700 text-sky-600 focus:ring-0"
           />
-          <span className="text-rose-400 font-medium">Show Overdue Only</span>
+          <span className="text-rose-400 font-medium font-mono">Show Overdue Only</span>
         </label>
       </div>
 
@@ -187,14 +191,14 @@ export const TasksPage: React.FC = () => {
       {loading ? (
         <div className="space-y-3">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="h-20 bg-slate-900 rounded-lg border border-slate-800 animate-pulse"></div>
+            <div key={i} className="h-20 bg-slate-900 rounded-lg border border-slate-800 animate-pulse" />
           ))}
         </div>
       ) : tasks.length === 0 ? (
         <div className="bg-slate-900 border border-slate-800 rounded-lg p-12 text-center">
           <CheckSquare className="w-10 h-10 text-slate-600 mx-auto mb-3" />
           <h3 className="text-sm font-semibold text-slate-300">No Tasks Match Filter Criteria</h3>
-          <p className="text-xs text-slate-500 mt-1">Try resetting filter options or create a new task.</p>
+          <p className="text-xs text-slate-500 mt-1">Try resetting filter options or create a new sprint task.</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -202,26 +206,26 @@ export const TasksPage: React.FC = () => {
             <div
               key={task.id}
               className={`bg-slate-900 border rounded-lg p-4 transition ${
-                task.overdue ? 'border-rose-900/60 bg-rose-950/10' : 'border-slate-800 hover:border-slate-700'
+                task.overdue ? 'border-rose-800/80 bg-rose-950/15' : 'border-slate-800 hover:border-slate-750'
               }`}
             >
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div className="flex-1">
+                <div className="flex-1 min-w-0">
                   <div className="flex flex-wrap items-center gap-2 mb-1.5">
-                    <span className="font-mono text-xs px-2 py-0.5 rounded bg-slate-800 text-indigo-400 font-bold border border-slate-700">
+                    <span className="font-mono text-xs px-2 py-0.5 rounded bg-slate-800 text-sky-400 font-bold border border-slate-700">
                       {task.projectKey}
                     </span>
                     <PriorityBadge priority={task.priority} />
                     <StatusBadge status={task.status} />
 
                     {task.overdue && (
-                      <span className="inline-flex items-center gap-1 font-mono text-[11px] text-rose-400 font-semibold px-2 py-0.5 rounded bg-rose-950/80 border border-rose-800">
-                        <AlertCircle className="w-3 h-3" /> OVERDUE
+                      <span className="inline-flex items-center gap-1 font-mono text-[11px] text-rose-300 font-semibold px-2 py-0.5 rounded bg-rose-950/80 border border-rose-800">
+                        <AlertCircle className="w-3 h-3 text-rose-400" /> OVERDUE
                       </span>
                     )}
                   </div>
 
-                  <h3 className="text-sm font-semibold text-white">{task.title}</h3>
+                  <h3 className="text-sm font-semibold text-white tracking-tight">{task.title}</h3>
 
                   {task.description && (
                     <p className="text-xs text-slate-400 mt-1 line-clamp-1">{task.description}</p>
@@ -229,7 +233,7 @@ export const TasksPage: React.FC = () => {
 
                   {/* Blocked Reason callout if present */}
                   {task.status === 'BLOCKED' && task.blockedReason && (
-                    <div className="mt-2 text-xs text-rose-300 bg-rose-950/40 border border-rose-900/60 px-3 py-1.5 rounded flex items-center gap-2">
+                    <div className="mt-2 text-xs text-rose-300 bg-rose-950/40 border border-rose-900/60 px-3 py-1.5 rounded flex items-center gap-2 font-mono">
                       <AlertCircle className="w-3.5 h-3.5 shrink-0 text-rose-400" />
                       <span>Blocker: {task.blockedReason}</span>
                     </div>
@@ -249,10 +253,10 @@ export const TasksPage: React.FC = () => {
                   )}
                 </div>
 
-                <div className="flex flex-wrap items-center gap-4 text-xs shrink-0">
+                <div className="flex flex-wrap items-center gap-4 text-xs shrink-0 font-mono">
                   <div className="text-right">
-                    <div className="text-slate-300 font-medium">{task.assigneeFullName || 'Unassigned'}</div>
-                    <div className="text-[11px] text-slate-500 font-mono">
+                    <div className="text-slate-300 font-sans font-medium">{task.assigneeFullName || 'Unassigned'}</div>
+                    <div className="text-[11px] text-slate-400">
                       {task.dueDate ? `Due: ${task.dueDate}` : 'No deadline'}
                     </div>
                   </div>
@@ -261,7 +265,7 @@ export const TasksPage: React.FC = () => {
                   <select
                     value={task.status}
                     onChange={(e) => handleQuickStatusChange(task.id, e.target.value as TaskStatus)}
-                    className="bg-slate-950 border border-slate-700 rounded px-2.5 py-1 text-xs text-slate-200 focus:outline-none focus:border-indigo-500"
+                    className="bg-slate-950 border border-slate-700 rounded px-2.5 py-1 text-xs text-slate-200 focus:outline-none focus:border-sky-500 font-mono"
                   >
                     <option value="TODO">TO DO</option>
                     <option value="IN_PROGRESS">IN PROGRESS</option>
@@ -277,7 +281,13 @@ export const TasksPage: React.FC = () => {
       )}
 
       {/* Create Task Modal */}
-      <Modal isOpen={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)} title="Create Agile Task" maxWidth="lg">
+      <Modal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        title="Create Sprint Task"
+        subtitle="Track technical deliverable, assignment, and blockers."
+        maxWidth="lg"
+      >
         <form onSubmit={handleCreateTask} className="space-y-4">
           <div>
             <label className="block text-xs font-medium text-slate-300 uppercase tracking-wider">
@@ -288,21 +298,21 @@ export const TasksPage: React.FC = () => {
               required
               value={formData.title}
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-              className="mt-1 block w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-md text-sm text-slate-100 focus:outline-none focus:border-indigo-500"
+              className="mt-1 block w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-md text-sm text-slate-100 focus:outline-none focus:border-sky-500"
               placeholder="e.g., Implement idempotency token check for settlement requests"
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-medium text-slate-300 uppercase tracking-wider">
-                Project *
+                Governed Project *
               </label>
               <select
                 required
                 value={formData.projectId}
                 onChange={(e) => setFormData({ ...formData, projectId: e.target.value })}
-                className="mt-1 block w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-md text-xs text-slate-100 focus:outline-none focus:border-indigo-500"
+                className="mt-1 block w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-md text-xs text-slate-100 focus:outline-none focus:border-sky-500 font-mono"
               >
                 {projects.map((p) => (
                   <option key={p.id} value={p.id}>
@@ -319,7 +329,7 @@ export const TasksPage: React.FC = () => {
               <select
                 value={formData.assigneeId}
                 onChange={(e) => setFormData({ ...formData, assigneeId: e.target.value })}
-                className="mt-1 block w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-md text-xs text-slate-100 focus:outline-none focus:border-indigo-500"
+                className="mt-1 block w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-md text-xs text-slate-100 focus:outline-none focus:border-sky-500"
               >
                 <option value="">Unassigned</option>
                 {users.map((u) => (
@@ -331,7 +341,7 @@ export const TasksPage: React.FC = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
               <label className="block text-xs font-medium text-slate-300 uppercase tracking-wider">
                 Status
@@ -339,7 +349,7 @@ export const TasksPage: React.FC = () => {
               <select
                 value={formData.status}
                 onChange={(e) => setFormData({ ...formData, status: e.target.value as TaskStatus })}
-                className="mt-1 block w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-md text-xs text-slate-100 focus:outline-none focus:border-indigo-500"
+                className="mt-1 block w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-md text-xs text-slate-100 focus:outline-none focus:border-sky-500 font-mono"
               >
                 <option value="TODO">TO DO</option>
                 <option value="IN_PROGRESS">IN PROGRESS</option>
@@ -356,7 +366,7 @@ export const TasksPage: React.FC = () => {
               <select
                 value={formData.priority}
                 onChange={(e) => setFormData({ ...formData, priority: e.target.value as Priority })}
-                className="mt-1 block w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-md text-xs text-slate-100 focus:outline-none focus:border-indigo-500"
+                className="mt-1 block w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-md text-xs text-slate-100 focus:outline-none focus:border-sky-500 font-mono"
               >
                 <option value="LOW">LOW</option>
                 <option value="MEDIUM">MEDIUM</option>
@@ -373,7 +383,7 @@ export const TasksPage: React.FC = () => {
                 type="date"
                 value={formData.dueDate}
                 onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
-                className="mt-1 block w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-md text-xs text-slate-100 focus:outline-none focus:border-indigo-500"
+                className="mt-1 block w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-md text-xs text-slate-100 font-mono focus:outline-none focus:border-sky-500"
               />
             </div>
           </div>
@@ -402,7 +412,7 @@ export const TasksPage: React.FC = () => {
               rows={3}
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              className="mt-1 block w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-md text-sm text-slate-100 focus:outline-none focus:border-indigo-500"
+              className="mt-1 block w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-md text-xs text-slate-100 font-mono focus:outline-none focus:border-sky-500"
               placeholder="Technical implementation requirements..."
             />
           </div>
@@ -411,13 +421,13 @@ export const TasksPage: React.FC = () => {
             <button
               type="button"
               onClick={() => setIsCreateModalOpen(false)}
-              className="px-4 py-2 text-xs font-medium text-slate-300 bg-slate-800 rounded-md hover:bg-slate-700 transition"
+              className="px-4 py-2 text-xs font-semibold text-slate-300 bg-slate-800 rounded-md hover:bg-slate-700 transition"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-4 py-2 text-xs font-semibold text-white bg-indigo-600 rounded-md hover:bg-indigo-500 transition shadow-sm"
+              className="px-4 py-2 text-xs font-semibold text-white bg-sky-600 rounded-md hover:bg-sky-500 transition shadow-xs"
             >
               Create Task
             </button>

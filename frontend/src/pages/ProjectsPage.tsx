@@ -3,7 +3,6 @@ import { projectService, userService } from '../services/projectService';
 import { Project, ProjectStatus, Priority, UserProfile } from '../types';
 import { StatusBadge, PriorityBadge } from '../components/common/Badge';
 import { Modal } from '../components/common/Modal';
-import { ConfirmDialog } from '../components/common/ConfirmDialog';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../components/common/Toast';
 import { Link } from 'react-router-dom';
@@ -79,7 +78,7 @@ export const ProjectsPage: React.FC = () => {
 
     try {
       await projectService.createProject(formData);
-      success('Project created successfully.');
+      success('Project initialized successfully.');
       setIsCreateModalOpen(false);
       setFormData({
         name: '',
@@ -93,7 +92,7 @@ export const ProjectsPage: React.FC = () => {
       });
       loadProjects();
     } catch (err: any) {
-      error(err.response?.data?.message || 'Failed to create project.');
+      error(err.response?.data?.message || 'Failed to initialize project.');
     }
   };
 
@@ -109,9 +108,12 @@ export const ProjectsPage: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 border-b border-slate-800 pb-5">
         <div>
-          <h1 className="text-xl font-bold tracking-tight text-white flex items-center gap-2">
-            <FolderGit2 className="w-5 h-5 text-indigo-400" /> Enterprise Project Portfolios
-          </h1>
+          <div className="flex items-center gap-2">
+            <FolderGit2 className="w-5 h-5 text-sky-400" />
+            <h1 className="text-xl font-bold tracking-tight text-white">
+              Enterprise Project Portfolios
+            </h1>
+          </div>
           <p className="text-xs text-slate-400 mt-1">
             Governed system architectures, release schedules, and core banking workstreams.
           </p>
@@ -119,10 +121,11 @@ export const ProjectsPage: React.FC = () => {
 
         {isProjectManager && (
           <button
+            type="button"
             onClick={openCreateModal}
-            className="px-3.5 py-2 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-500 rounded-md transition flex items-center gap-2 shadow-sm"
+            className="px-3.5 py-2 text-xs font-semibold text-white bg-sky-600 hover:bg-sky-500 rounded-md transition flex items-center gap-2 shadow-xs"
           >
-            <Plus className="w-4 h-4" /> Create Project
+            <Plus className="w-4 h-4" /> Initialize Project
           </button>
         )}
       </div>
@@ -136,7 +139,7 @@ export const ProjectsPage: React.FC = () => {
             placeholder="Search projects by name or code (e.g., CSG-01)..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 bg-slate-900 border border-slate-800 rounded-md text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+            className="w-full pl-9 pr-4 py-2 bg-slate-900 border border-slate-800 rounded-md text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-sky-500"
           />
         </div>
 
@@ -145,7 +148,7 @@ export const ProjectsPage: React.FC = () => {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="bg-slate-900 border border-slate-800 rounded-md px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-indigo-500"
+            className="bg-slate-900 border border-slate-800 rounded-md px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-sky-500 font-mono"
           >
             <option value="ALL">All Statuses</option>
             <option value="PLANNED">PLANNED</option>
@@ -159,27 +162,27 @@ export const ProjectsPage: React.FC = () => {
 
       {/* Projects Grid */}
       {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-64 bg-slate-900 rounded-lg border border-slate-800 animate-pulse"></div>
+            <div key={i} className="h-60 bg-slate-900 rounded-lg border border-slate-800 animate-pulse" />
           ))}
         </div>
       ) : filteredProjects.length === 0 ? (
         <div className="bg-slate-900 border border-slate-800 rounded-lg p-12 text-center">
           <FolderGit2 className="w-10 h-10 text-slate-600 mx-auto mb-3" />
           <h3 className="text-sm font-semibold text-slate-300">No Projects Found</h3>
-          <p className="text-xs text-slate-500 mt-1">Try adjusting search parameters or create a new project.</p>
+          <p className="text-xs text-slate-500 mt-1">Try adjusting search parameters or initialize a new project.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {filteredProjects.map((p) => (
             <div
               key={p.id}
-              className="bg-slate-900 border border-slate-800 rounded-lg p-5 flex flex-col justify-between hover:border-slate-700 transition"
+              className="bg-slate-900 border border-slate-800 rounded-lg p-5 flex flex-col justify-between hover:border-slate-750 transition"
             >
               <div>
                 <div className="flex items-start justify-between gap-2 mb-2">
-                  <span className="font-mono text-xs px-2 py-0.5 rounded bg-slate-800 text-indigo-400 font-bold border border-slate-700">
+                  <span className="font-mono text-xs px-2 py-0.5 rounded bg-slate-800 text-sky-400 font-bold border border-slate-700">
                     {p.key}
                   </span>
                   <div className="flex items-center gap-1.5">
@@ -204,13 +207,13 @@ export const ProjectsPage: React.FC = () => {
               </div>
 
               <div className="mt-5 pt-3 border-t border-slate-800 flex items-center justify-between">
-                <div className="text-[11px] text-slate-500 font-mono">
+                <div className="text-[11px] text-slate-400 font-mono">
                   {p.targetEndDate ? `Target: ${p.targetEndDate}` : 'Ongoing'}
                 </div>
 
                 <Link
                   to={`/projects/${p.id}`}
-                  className="inline-flex items-center gap-1 text-xs font-semibold text-indigo-400 hover:text-indigo-300"
+                  className="inline-flex items-center gap-1 text-xs font-semibold text-sky-400 hover:text-sky-300 font-mono"
                 >
                   Inspect <ArrowRight className="w-3.5 h-3.5" />
                 </Link>
@@ -221,7 +224,12 @@ export const ProjectsPage: React.FC = () => {
       )}
 
       {/* Create Project Modal */}
-      <Modal isOpen={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)} title="Initialize New Project">
+      <Modal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        title="Initialize Governed Project"
+        subtitle="Define architecture portfolio parameters and milestone schedule."
+      >
         <form onSubmit={handleCreateProject} className="space-y-4">
           <div>
             <label className="block text-xs font-medium text-slate-300 uppercase tracking-wider">
@@ -232,7 +240,7 @@ export const ProjectsPage: React.FC = () => {
               required
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className="mt-1 block w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-md text-sm text-slate-100 focus:outline-none focus:border-indigo-500"
+              className="mt-1 block w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-md text-sm text-slate-100 focus:outline-none focus:border-sky-500"
               placeholder="e.g., ISO 20022 Clearing Engine"
             />
           </div>
@@ -246,7 +254,7 @@ export const ProjectsPage: React.FC = () => {
               required
               value={formData.key}
               onChange={(e) => setFormData({ ...formData, key: e.target.value.toUpperCase() })}
-              className="mt-1 block w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-md text-sm text-slate-100 font-mono focus:outline-none focus:border-indigo-500"
+              className="mt-1 block w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-md text-sm text-slate-100 font-mono focus:outline-none focus:border-sky-500"
               placeholder="e.g., CLR-04"
             />
           </div>
@@ -259,12 +267,12 @@ export const ProjectsPage: React.FC = () => {
               rows={3}
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              className="mt-1 block w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-md text-sm text-slate-100 focus:outline-none focus:border-indigo-500"
+              className="mt-1 block w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-md text-xs text-slate-100 font-mono focus:outline-none focus:border-sky-500"
               placeholder="System objectives, scope and architecture notes..."
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-medium text-slate-300 uppercase tracking-wider">
                 Status
@@ -272,7 +280,7 @@ export const ProjectsPage: React.FC = () => {
               <select
                 value={formData.status}
                 onChange={(e) => setFormData({ ...formData, status: e.target.value as ProjectStatus })}
-                className="mt-1 block w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-md text-xs text-slate-100 focus:outline-none focus:border-indigo-500"
+                className="mt-1 block w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-md text-xs text-slate-100 focus:outline-none focus:border-sky-500 font-mono"
               >
                 <option value="PLANNED">PLANNED</option>
                 <option value="IN_PROGRESS">IN PROGRESS</option>
@@ -288,7 +296,7 @@ export const ProjectsPage: React.FC = () => {
               <select
                 value={formData.priority}
                 onChange={(e) => setFormData({ ...formData, priority: e.target.value as Priority })}
-                className="mt-1 block w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-md text-xs text-slate-100 focus:outline-none focus:border-indigo-500"
+                className="mt-1 block w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-md text-xs text-slate-100 focus:outline-none focus:border-sky-500 font-mono"
               >
                 <option value="LOW">LOW</option>
                 <option value="MEDIUM">MEDIUM</option>
@@ -298,7 +306,7 @@ export const ProjectsPage: React.FC = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-medium text-slate-300 uppercase tracking-wider">
                 Start Date
@@ -307,7 +315,7 @@ export const ProjectsPage: React.FC = () => {
                 type="date"
                 value={formData.startDate}
                 onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-                className="mt-1 block w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-md text-xs text-slate-100 focus:outline-none focus:border-indigo-500"
+                className="mt-1 block w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-md text-xs text-slate-100 font-mono focus:outline-none focus:border-sky-500"
               />
             </div>
 
@@ -319,7 +327,7 @@ export const ProjectsPage: React.FC = () => {
                 type="date"
                 value={formData.targetEndDate}
                 onChange={(e) => setFormData({ ...formData, targetEndDate: e.target.value })}
-                className="mt-1 block w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-md text-xs text-slate-100 focus:outline-none focus:border-indigo-500"
+                className="mt-1 block w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-md text-xs text-slate-100 font-mono focus:outline-none focus:border-sky-500"
               />
             </div>
           </div>
@@ -328,13 +336,13 @@ export const ProjectsPage: React.FC = () => {
             <button
               type="button"
               onClick={() => setIsCreateModalOpen(false)}
-              className="px-4 py-2 text-xs font-medium text-slate-300 bg-slate-800 rounded-md hover:bg-slate-700 transition"
+              className="px-4 py-2 text-xs font-semibold text-slate-300 bg-slate-800 rounded-md hover:bg-slate-700 transition"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-4 py-2 text-xs font-semibold text-white bg-indigo-600 rounded-md hover:bg-indigo-500 transition shadow-sm"
+              className="px-4 py-2 text-xs font-semibold text-white bg-sky-600 rounded-md hover:bg-sky-500 transition shadow-xs"
             >
               Initialize Project
             </button>
