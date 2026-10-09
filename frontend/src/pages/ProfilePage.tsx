@@ -32,7 +32,7 @@ export const ProfilePage: React.FC = () => {
             <div className="mt-1.5 flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-emerald-400" />
               <span className="text-[11px] font-mono text-emerald-400 font-semibold">
-                Active Directory & PAM Clearance Verified
+                Session Authenticated &amp; RBAC Verified
               </span>
             </div>
           </div>

@@ -15,6 +15,8 @@ import {
   ArrowRight,
   GitCommit,
   CheckCircle2,
+  User,
+  Calendar,
 } from 'lucide-react';
 
 export const TasksPage: React.FC = () => {
@@ -143,6 +145,78 @@ export const TasksPage: React.FC = () => {
         )}
       </div>
 
+      {/* Task Delivery Metrics Bar */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div
+          onClick={() => {
+            setSelectedStatus('ALL');
+            setOverdueOnly(false);
+          }}
+          className={`bg-slate-900 border rounded-lg p-3 cursor-pointer transition ${
+            selectedStatus === 'ALL' && !overdueOnly
+              ? 'border-sky-500/60 ring-1 ring-sky-500/30'
+              : 'border-slate-800 hover:border-slate-700'
+          }`}
+        >
+          <div className="text-[10px] font-mono uppercase text-slate-400">All Sprint Tasks</div>
+          <div className="text-xl font-bold text-white mt-1 tabular-nums">{tasks.length}</div>
+        </div>
+
+        <div
+          onClick={() => {
+            setSelectedStatus('BLOCKED');
+            setOverdueOnly(false);
+          }}
+          className={`bg-slate-900 border rounded-lg p-3 cursor-pointer transition ${
+            selectedStatus === 'BLOCKED'
+              ? 'border-rose-500 ring-1 ring-rose-500/30'
+              : 'border-rose-900/40 hover:border-rose-800'
+          }`}
+        >
+          <div className="text-[10px] font-mono uppercase text-rose-400 font-semibold">
+            Blocked Tasks
+          </div>
+          <div className="text-xl font-bold text-rose-400 mt-1 tabular-nums">
+            {tasks.filter((t) => t.status === 'BLOCKED').length}
+          </div>
+        </div>
+
+        <div
+          onClick={() => setOverdueOnly(!overdueOnly)}
+          className={`bg-slate-900 border rounded-lg p-3 cursor-pointer transition ${
+            overdueOnly
+              ? 'border-amber-500 ring-1 ring-amber-500/30'
+              : 'border-amber-900/40 hover:border-amber-800'
+          }`}
+        >
+          <div className="text-[10px] font-mono uppercase text-amber-400 font-semibold">
+            Overdue Deliverables
+          </div>
+          <div className="text-xl font-bold text-amber-400 mt-1 tabular-nums">
+            {tasks.filter((t) => t.overdue).length}
+          </div>
+        </div>
+
+        <div
+          onClick={() => {
+            setSelectedStatus('IN_PROGRESS');
+            setOverdueOnly(false);
+          }}
+          className={`bg-slate-900 border rounded-lg p-3 cursor-pointer transition ${
+            selectedStatus === 'IN_PROGRESS'
+              ? 'border-sky-500 ring-1 ring-sky-500/30'
+              : 'border-sky-900/40 hover:border-sky-800'
+          }`}
+        >
+          <div className="text-[10px] font-mono uppercase text-sky-400 font-semibold">
+            In Progress
+          </div>
+          <div className="text-xl font-bold text-sky-400 mt-1 tabular-nums">
+            {tasks.filter((t) => t.status === 'IN_PROGRESS' || t.status === 'IN_REVIEW').length}
+          </div>
+        </div>
+      </div>
+
       {/* Filter Controls */}
       <div className="flex flex-wrap items-center gap-3 bg-slate-900 border border-slate-800 p-3 rounded-lg">
         <Filter className="w-4 h-4 text-slate-500" />
@@ -191,7 +265,7 @@ export const TasksPage: React.FC = () => {
       {loading ? (
         <div className="space-y-3">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="h-20 bg-slate-900 rounded-lg border border-slate-800 animate-pulse" />
+            <div key={i} className="h-24 bg-slate-900 rounded-lg border border-slate-800 animate-pulse" />
           ))}
         </div>
       ) : tasks.length === 0 ? (
@@ -202,81 +276,138 @@ export const TasksPage: React.FC = () => {
         </div>
       ) : (
         <div className="space-y-3">
-          {tasks.map((task) => (
-            <div
-              key={task.id}
-              className={`bg-slate-900 border rounded-lg p-4 transition ${
-                task.overdue ? 'border-rose-800/80 bg-rose-950/15' : 'border-slate-800 hover:border-slate-750'
-              }`}
-            >
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div className="flex-1 min-w-0">
-                  <div className="flex flex-wrap items-center gap-2 mb-1.5">
-                    <span className="font-mono text-xs px-2 py-0.5 rounded bg-slate-800 text-sky-400 font-bold border border-slate-700">
-                      {task.projectKey}
-                    </span>
-                    <PriorityBadge priority={task.priority} />
-                    <StatusBadge status={task.status} />
+          {tasks.map((task) => {
+            const isBlocked = task.status === 'BLOCKED';
+            const isOverdue = task.overdue;
 
-                    {task.overdue && (
-                      <span className="inline-flex items-center gap-1 font-mono text-[11px] text-rose-300 font-semibold px-2 py-0.5 rounded bg-rose-950/80 border border-rose-800">
-                        <AlertCircle className="w-3 h-3 text-rose-400" /> OVERDUE
+            return (
+              <div
+                key={task.id}
+                className={`bg-slate-900 border rounded-lg p-4 transition shadow-xs ${
+                  isBlocked
+                    ? 'border-l-4 border-l-rose-500 border-rose-900/50 bg-rose-950/10'
+                    : isOverdue
+                    ? 'border-l-4 border-l-amber-500 border-amber-900/50 bg-amber-950/10'
+                    : task.status === 'DONE'
+                    ? 'border-l-4 border-l-emerald-500 border-slate-800'
+                    : 'border-l-4 border-l-sky-500/60 border-slate-800 hover:border-slate-700'
+                }`}
+              >
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                  {/* Task Main Content */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex flex-wrap items-center gap-2 mb-1.5">
+                      <span className="font-mono text-xs px-2 py-0.5 rounded bg-slate-800 text-sky-400 font-bold border border-slate-700">
+                        {task.projectKey}
                       </span>
+                      <PriorityBadge priority={task.priority} />
+                      <StatusBadge status={task.status} />
+
+                      {isOverdue && (
+                        <span className="inline-flex items-center gap-1 font-mono text-[11px] text-rose-300 font-semibold px-2 py-0.5 rounded bg-rose-950/80 border border-rose-800">
+                          <AlertCircle className="w-3 h-3 text-rose-400" /> OVERDUE
+                        </span>
+                      )}
+
+                      {isBlocked && (
+                        <span className="inline-flex items-center gap-1 font-mono text-[11px] text-rose-300 font-semibold px-2 py-0.5 rounded bg-rose-950/80 border border-rose-800">
+                          <AlertCircle className="w-3 h-3 text-rose-400" /> BLOCKED
+                        </span>
+                      )}
+                    </div>
+
+                    <h3 className="text-sm font-semibold text-white tracking-tight">{task.title}</h3>
+
+                    {task.description && (
+                      <p className="text-xs text-slate-400 mt-1 line-clamp-2 leading-relaxed">
+                        {task.description}
+                      </p>
+                    )}
+
+                    {/* Prominently Separated Blocker Alert */}
+                    {isBlocked && (
+                      <div className="mt-2.5 p-2.5 rounded bg-rose-950/40 border border-rose-900/80 text-xs text-rose-200 flex items-start gap-2 font-mono">
+                        <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+                        <div>
+                          <span className="text-[10px] uppercase font-bold text-rose-300 tracking-wider block">
+                            DELIVERY BLOCKER:
+                          </span>
+                          <span className="text-rose-100 font-sans mt-0.5 block">
+                            {task.blockedReason || 'No specific blocker reason documented.'}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Dependencies */}
+                    {task.dependencies && task.dependencies.length > 0 && (
+                      <div className="mt-2.5 flex items-center gap-1.5 text-[11px] text-slate-400 font-mono">
+                        <GitCommit className="w-3 h-3 text-slate-500" />
+                        <span>Depends on:</span>
+                        {task.dependencies.map((d) => (
+                          <span
+                            key={d.id}
+                            className="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700"
+                          >
+                            {d.title}
+                          </span>
+                        ))}
+                      </div>
                     )}
                   </div>
 
-                  <h3 className="text-sm font-semibold text-white tracking-tight">{task.title}</h3>
-
-                  {task.description && (
-                    <p className="text-xs text-slate-400 mt-1 line-clamp-1">{task.description}</p>
-                  )}
-
-                  {/* Blocked Reason callout if present */}
-                  {task.status === 'BLOCKED' && task.blockedReason && (
-                    <div className="mt-2 text-xs text-rose-300 bg-rose-950/40 border border-rose-900/60 px-3 py-1.5 rounded flex items-center gap-2 font-mono">
-                      <AlertCircle className="w-3.5 h-3.5 shrink-0 text-rose-400" />
-                      <span>Blocker: {task.blockedReason}</span>
+                  {/* Separated Metadata: Owner, Deadline & Quick Status */}
+                  <div className="flex flex-wrap items-center gap-4 text-xs pt-3 lg:pt-0 border-t lg:border-t-0 border-slate-800/80 shrink-0">
+                    {/* Owner Column */}
+                    <div className="flex items-center gap-2 bg-slate-950/70 border border-slate-800 px-3 py-1.5 rounded-md min-w-[130px]">
+                      <User className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                      <div className="text-left">
+                        <div className="text-[10px] font-mono text-slate-400 uppercase">Owner</div>
+                        <div className="text-slate-200 font-medium truncate max-w-[110px]">
+                          {task.assigneeFullName || 'Unassigned'}
+                        </div>
+                      </div>
                     </div>
-                  )}
 
-                  {/* Dependencies pill */}
-                  {task.dependencies && task.dependencies.length > 0 && (
-                    <div className="mt-2 flex items-center gap-1.5 text-[11px] text-slate-400 font-mono">
-                      <GitCommit className="w-3 h-3 text-slate-500" />
-                      <span>Depends on:</span>
-                      {task.dependencies.map((d) => (
-                        <span key={d.id} className="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300">
-                          {d.title}
-                        </span>
-                      ))}
+                    {/* Deadline Column */}
+                    <div className="flex items-center gap-2 bg-slate-950/70 border border-slate-800 px-3 py-1.5 rounded-md min-w-[120px]">
+                      <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                      <div className="text-left">
+                        <div className="text-[10px] font-mono text-slate-400 uppercase">Deadline</div>
+                        <div
+                          className={`font-mono text-[11px] ${
+                            isOverdue ? 'text-rose-400 font-bold' : 'text-slate-200'
+                          }`}
+                        >
+                          {task.dueDate ? task.dueDate : 'No deadline'}
+                        </div>
+                      </div>
                     </div>
-                  )}
-                </div>
 
-                <div className="flex flex-wrap items-center gap-4 text-xs shrink-0 font-mono">
-                  <div className="text-right">
-                    <div className="text-slate-300 font-sans font-medium">{task.assigneeFullName || 'Unassigned'}</div>
-                    <div className="text-[11px] text-slate-400">
-                      {task.dueDate ? `Due: ${task.dueDate}` : 'No deadline'}
+                    {/* Status Dropdown */}
+                    <div className="flex flex-col text-left">
+                      <span className="text-[10px] font-mono text-slate-400 uppercase mb-0.5">
+                        Status
+                      </span>
+                      <select
+                        value={task.status}
+                        onChange={(e) =>
+                          handleQuickStatusChange(task.id, e.target.value as TaskStatus)
+                        }
+                        className="bg-slate-950 border border-slate-700 rounded px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-sky-500 font-mono shadow-xs"
+                      >
+                        <option value="TODO">TO DO</option>
+                        <option value="IN_PROGRESS">IN PROGRESS</option>
+                        <option value="IN_REVIEW">IN REVIEW</option>
+                        <option value="BLOCKED">BLOCKED</option>
+                        <option value="DONE">DONE</option>
+                      </select>
                     </div>
                   </div>
-
-                  {/* Inline Status Dropdown */}
-                  <select
-                    value={task.status}
-                    onChange={(e) => handleQuickStatusChange(task.id, e.target.value as TaskStatus)}
-                    className="bg-slate-950 border border-slate-700 rounded px-2.5 py-1 text-xs text-slate-200 focus:outline-none focus:border-sky-500 font-mono"
-                  >
-                    <option value="TODO">TO DO</option>
-                    <option value="IN_PROGRESS">IN PROGRESS</option>
-                    <option value="IN_REVIEW">IN REVIEW</option>
-                    <option value="BLOCKED">BLOCKED</option>
-                    <option value="DONE">DONE</option>
-                  </select>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 

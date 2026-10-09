@@ -54,11 +54,11 @@ export const LoginPage: React.FC = () => {
       </div>
 
       <div className="mt-6 sm:mx-auto sm:w-full sm:max-w-md">
-        {/* Compliance Warning Banner */}
+        {/* Authorized Access & Audit Notice */}
         <div className="mb-4 p-3 rounded bg-slate-900 border border-slate-800 text-[11px] text-slate-400 flex items-start gap-2.5 leading-relaxed font-mono">
           <ShieldCheck className="w-4 h-4 text-sky-400 shrink-0 mt-0.5" />
           <span>
-            Authorized personnel only. Access and operations are cryptographically verified and audited under SOC2 Type II compliance.
+            Authorized access only. Authentication events, role transitions, and release sign-offs are cryptographically signed and logged.
           </span>
         </div>
 
@@ -121,9 +121,14 @@ export const LoginPage: React.FC = () => {
 
           {/* Instant Evaluation Demo Credentials */}
           <div className="mt-6 border-t border-slate-800 pt-5">
-            <span className="text-[10px] font-mono uppercase tracking-widest text-slate-400 block mb-2.5 font-semibold">
-              Instant Evaluation Profiles:
-            </span>
+            <div className="flex items-center justify-between mb-2.5">
+              <span className="text-[10px] font-mono uppercase tracking-widest text-slate-400 font-semibold">
+                Evaluation Demo Accounts:
+              </span>
+              <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-amber-950/80 text-amber-300 border border-amber-800 font-semibold">
+                SANDBOX DATA
+              </span>
+            </div>
             <div className="grid grid-cols-2 gap-2 text-xs">
               <button
                 type="button"

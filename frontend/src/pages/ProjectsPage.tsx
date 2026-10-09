@@ -168,17 +168,30 @@ export const ProjectsPage: React.FC = () => {
           ))}
         </div>
       ) : filteredProjects.length === 0 ? (
-        <div className="bg-slate-900 border border-slate-800 rounded-lg p-12 text-center">
+        <div className="bg-slate-900 border border-slate-800 rounded-lg p-12 text-center max-w-lg mx-auto">
           <FolderGit2 className="w-10 h-10 text-slate-600 mx-auto mb-3" />
-          <h3 className="text-sm font-semibold text-slate-300">No Projects Found</h3>
-          <p className="text-xs text-slate-500 mt-1">Try adjusting search parameters or initialize a new project.</p>
+          <h3 className="text-sm font-semibold text-slate-300">No Governed Projects Found</h3>
+          <p className="text-xs text-slate-500 mt-1">
+            {searchQuery
+              ? `No projects match "${searchQuery}". Try clearing search filters.`
+              : 'Initialize your first release-governed project to begin tracking.'}
+          </p>
+          {isProjectManager && (
+            <button
+              type="button"
+              onClick={openCreateModal}
+              className="mt-4 px-3.5 py-2 text-xs font-semibold text-white bg-sky-600 hover:bg-sky-500 rounded-md transition inline-flex items-center gap-2 shadow-xs"
+            >
+              <Plus className="w-4 h-4" /> Initialize Project
+            </button>
+          )}
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {filteredProjects.map((p) => (
             <div
               key={p.id}
-              className="bg-slate-900 border border-slate-800 rounded-lg p-5 flex flex-col justify-between hover:border-slate-750 transition"
+              className="bg-slate-900 border border-slate-800 rounded-lg p-5 flex flex-col justify-between hover:border-slate-750 transition shadow-xs"
             >
               <div>
                 <div className="flex items-start justify-between gap-2 mb-2">
@@ -202,7 +215,12 @@ export const ProjectsPage: React.FC = () => {
                     <Users className="w-3.5 h-3.5 text-slate-500" />
                     <span>{p.members?.length || 1} team members</span>
                   </div>
-                  <span>Lead: <strong className="text-slate-300 font-normal">{p.createdByFullName?.split(' ')[0]}</strong></span>
+                  <span>
+                    Lead:{' '}
+                    <strong className="text-slate-300 font-normal">
+                      {p.createdByFullName?.split(' ')[0]}
+                    </strong>
+                  </span>
                 </div>
               </div>
 
@@ -220,6 +238,24 @@ export const ProjectsPage: React.FC = () => {
               </div>
             </div>
           ))}
+
+          {/* Intentional Quick-Add Card when dataset is small (< 3) and user is PM */}
+          {filteredProjects.length < 3 && isProjectManager && (
+            <div
+              onClick={openCreateModal}
+              className="bg-slate-900/40 border-2 border-dashed border-slate-800 hover:border-sky-500/50 rounded-lg p-6 flex flex-col items-center justify-center text-center cursor-pointer transition group min-h-[220px]"
+            >
+              <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-slate-400 group-hover:text-sky-400 group-hover:bg-slate-750 transition mb-2">
+                <Plus className="w-5 h-5" />
+              </div>
+              <h4 className="text-xs font-semibold text-slate-200 group-hover:text-white">
+                Initialize Another Project
+              </h4>
+              <p className="text-[11px] text-slate-500 mt-1 max-w-[200px]">
+                Add another service or core system to the governance boundary.
+              </p>
+            </div>
+          )}
         </div>
       )}
 

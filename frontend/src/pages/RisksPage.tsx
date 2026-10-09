@@ -21,6 +21,11 @@ import {
   User,
   ShieldCheck,
   AlertTriangle,
+  Table as TableIcon,
+  LayoutGrid,
+  ChevronDown,
+  ChevronRight,
+  ArrowUpDown,
 } from 'lucide-react';
 
 export const RisksPage: React.FC = () => {
@@ -28,6 +33,12 @@ export const RisksPage: React.FC = () => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // View & Sort
+  const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
+  const [sortField, setSortField] = useState<'riskScore' | 'dueDate' | 'title'>('riskScore');
+  const [sortAsc, setSortAsc] = useState<boolean>(false);
+  const [expandedRiskId, setExpandedRiskId] = useState<string | null>(null);
 
   // Filters
   const [severityFilter, setSeverityFilter] = useState<string>('ALL');
@@ -152,6 +163,27 @@ export const RisksPage: React.FC = () => {
 
   const calculatedScore = formData.probability * formData.impact;
 
+  const sortedRisks = [...risks].sort((a, b) => {
+    let comparison = 0;
+    if (sortField === 'riskScore') {
+      comparison = a.riskScore - b.riskScore;
+    } else if (sortField === 'dueDate') {
+      comparison = (a.dueDate || '').localeCompare(b.dueDate || '');
+    } else {
+      comparison = a.title.localeCompare(b.title);
+    }
+    return sortAsc ? comparison : -comparison;
+  });
+
+  const toggleSort = (field: 'riskScore' | 'dueDate' | 'title') => {
+    if (sortField === field) {
+      setSortAsc(!sortAsc);
+    } else {
+      setSortField(field);
+      setSortAsc(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -160,7 +192,7 @@ export const RisksPage: React.FC = () => {
           <div className="flex items-center gap-2">
             <ShieldAlert className="w-5 h-5 text-rose-400" />
             <h1 className="text-xl font-bold tracking-tight text-white">
-              Enterprise Risk & Controls Matrix
+              Enterprise Risk &amp; Controls Matrix
             </h1>
           </div>
           <p className="text-xs text-slate-400 mt-1">
@@ -179,52 +211,342 @@ export const RisksPage: React.FC = () => {
         )}
       </div>
 
-      {/* Filter Toolbar */}
-      <div className="flex flex-wrap items-center gap-3 bg-slate-900 border border-slate-800 p-3 rounded-lg">
-        <Filter className="w-4 h-4 text-slate-500" />
-
-        <select
-          value={severityFilter}
-          onChange={(e) => setSeverityFilter(e.target.value)}
-          className="bg-slate-950 border border-slate-800 rounded px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-sky-500 font-mono"
-        >
-          <option value="ALL">All Severities</option>
-          <option value="CRITICAL">CRITICAL (Score ≥ 16)</option>
-          <option value="HIGH">HIGH (Score ≥ 10)</option>
-          <option value="MEDIUM">MEDIUM (Score ≥ 5)</option>
-          <option value="LOW">LOW</option>
-        </select>
-
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          className="bg-slate-950 border border-slate-800 rounded px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-sky-500 font-mono"
-        >
-          <option value="ALL">All Statuses</option>
-          <option value="OPEN">OPEN</option>
-          <option value="MITIGATING">MITIGATING</option>
-          <option value="ACCEPTED">ACCEPTED</option>
-          <option value="RESOLVED">RESOLVED</option>
-          <option value="CLOSED">CLOSED</option>
-        </select>
+      {/* Quick Metrics Bar */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="bg-slate-900 border border-slate-800 rounded-lg p-3">
+          <div className="text-[10px] font-mono uppercase text-slate-400">Total Registered</div>
+          <div className="text-xl font-bold text-white mt-1 tabular-nums">{risks.length}</div>
+        </div>
+        <div className="bg-slate-900 border border-rose-900/40 rounded-lg p-3">
+          <div className="text-[10px] font-mono uppercase text-rose-400">Critical (Score ≥ 16)</div>
+          <div className="text-xl font-bold text-rose-400 mt-1 tabular-nums">
+            {risks.filter((r) => r.severity === 'CRITICAL').length}
+          </div>
+        </div>
+        <div className="bg-slate-900 border border-amber-900/40 rounded-lg p-3">
+          <div className="text-[10px] font-mono uppercase text-amber-400">Mitigating Controls</div>
+          <div className="text-xl font-bold text-amber-400 mt-1 tabular-nums">
+            {risks.filter((r) => r.status === 'MITIGATING').length}
+          </div>
+        </div>
+        <div className="bg-slate-900 border border-emerald-900/40 rounded-lg p-3">
+          <div className="text-[10px] font-mono uppercase text-emerald-400">Resolved / Closed</div>
+          <div className="text-xl font-bold text-emerald-400 mt-1 tabular-nums">
+            {risks.filter((r) => r.status === 'RESOLVED' || r.status === 'CLOSED').length}
+          </div>
+        </div>
       </div>
 
-      {/* Risks List */}
+      {/* Filter & View Mode Toolbar */}
+      <div className="flex flex-wrap items-center justify-between gap-3 bg-slate-900 border border-slate-800 p-3 rounded-lg">
+        <div className="flex flex-wrap items-center gap-3">
+          <Filter className="w-4 h-4 text-slate-500" />
+
+          <select
+            value={severityFilter}
+            onChange={(e) => setSeverityFilter(e.target.value)}
+            className="bg-slate-950 border border-slate-800 rounded px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-sky-500 font-mono"
+          >
+            <option value="ALL">All Severities</option>
+            <option value="CRITICAL">CRITICAL (Score ≥ 16)</option>
+            <option value="HIGH">HIGH (Score ≥ 10)</option>
+            <option value="MEDIUM">MEDIUM (Score ≥ 5)</option>
+            <option value="LOW">LOW</option>
+          </select>
+
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="bg-slate-950 border border-slate-800 rounded px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-sky-500 font-mono"
+          >
+            <option value="ALL">All Statuses</option>
+            <option value="OPEN">OPEN</option>
+            <option value="MITIGATING">MITIGATING</option>
+            <option value="ACCEPTED">ACCEPTED</option>
+            <option value="RESOLVED">RESOLVED</option>
+            <option value="CLOSED">CLOSED</option>
+          </select>
+        </div>
+
+        {/* View Mode Switcher */}
+        <div className="flex items-center gap-1 bg-slate-950 p-1 border border-slate-800 rounded-md">
+          <button
+            type="button"
+            onClick={() => setViewMode('table')}
+            className={`p-1.5 rounded text-xs flex items-center gap-1 transition ${
+              viewMode === 'table'
+                ? 'bg-sky-600 text-white font-semibold shadow-xs'
+                : 'text-slate-400 hover:text-white'
+            }`}
+            title="Dense Table View"
+          >
+            <TableIcon className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Table</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setViewMode('cards')}
+            className={`p-1.5 rounded text-xs flex items-center gap-1 transition ${
+              viewMode === 'cards'
+                ? 'bg-sky-600 text-white font-semibold shadow-xs'
+                : 'text-slate-400 hover:text-white'
+            }`}
+            title="Card View"
+          >
+            <LayoutGrid className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Cards</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Risks Content */}
       {loading ? (
         <div className="space-y-4">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-32 bg-slate-900 rounded-lg border border-slate-800 animate-pulse" />
+            <div key={i} className="h-24 bg-slate-900 rounded-lg border border-slate-800 animate-pulse" />
           ))}
         </div>
-      ) : risks.length === 0 ? (
+      ) : sortedRisks.length === 0 ? (
         <div className="bg-slate-900 border border-slate-800 rounded-lg p-12 text-center">
           <ShieldCheck className="w-10 h-10 text-emerald-400 mx-auto mb-3" />
           <h3 className="text-sm font-semibold text-slate-300">No Risks Under Selected Parameters</h3>
           <p className="text-xs text-slate-500 mt-1">All governance metrics are in compliance.</p>
         </div>
+      ) : viewMode === 'table' ? (
+        /* Dense Enterprise Table View */
+        <div className="bg-slate-900 border border-slate-800 rounded-lg overflow-hidden shadow-xs">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-slate-950/80 border-b border-slate-800 text-[11px] font-mono text-slate-400 uppercase tracking-wider">
+                <tr>
+                  <th className="py-3 px-3 w-8"></th>
+                  <th className="py-3 px-3">Project</th>
+                  <th
+                    className="py-3 px-3 cursor-pointer hover:text-slate-200"
+                    onClick={() => toggleSort('title')}
+                  >
+                    <div className="flex items-center gap-1">
+                      <span>Risk Title</span>
+                      <ArrowUpDown className="w-3 h-3" />
+                    </div>
+                  </th>
+                  <th
+                    className="py-3 px-3 cursor-pointer hover:text-slate-200"
+                    onClick={() => toggleSort('riskScore')}
+                  >
+                    <div className="flex items-center gap-1">
+                      <span>Score (P×I)</span>
+                      <ArrowUpDown className="w-3 h-3" />
+                    </div>
+                  </th>
+                  <th className="py-3 px-3">Severity</th>
+                  <th className="py-3 px-3">Status</th>
+                  <th className="py-3 px-3">Controls</th>
+                  <th className="py-3 px-3">Owner</th>
+                  <th
+                    className="py-3 px-3 cursor-pointer hover:text-slate-200"
+                    onClick={() => toggleSort('dueDate')}
+                  >
+                    <div className="flex items-center gap-1">
+                      <span>Due Date</span>
+                      <ArrowUpDown className="w-3 h-3" />
+                    </div>
+                  </th>
+                  <th className="py-3 px-3 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-800/80">
+                {sortedRisks.map((risk) => {
+                  const isExpanded = expandedRiskId === risk.id;
+                  const isCritical = risk.severity === 'CRITICAL';
+                  const completedMitigations =
+                    risk.mitigations?.filter((m) => m.completed).length || 0;
+                  const totalMitigations = risk.mitigations?.length || 0;
+
+                  return (
+                    <React.Fragment key={risk.id}>
+                      <tr
+                        className={`hover:bg-slate-850/50 transition ${
+                          isCritical ? 'bg-rose-950/10' : ''
+                        }`}
+                      >
+                        <td className="py-3 px-3">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setExpandedRiskId(isExpanded ? null : risk.id)
+                            }
+                            className="p-1 text-slate-400 hover:text-white rounded"
+                            title={isExpanded ? 'Collapse details' : 'Expand details'}
+                          >
+                            {isExpanded ? (
+                              <ChevronDown className="w-3.5 h-3.5" />
+                            ) : (
+                              <ChevronRight className="w-3.5 h-3.5" />
+                            )}
+                          </button>
+                        </td>
+                        <td className="py-3 px-3">
+                          <span className="font-mono text-[11px] px-1.5 py-0.5 rounded bg-slate-800 text-sky-400 font-bold border border-slate-700">
+                            {risk.projectKey}
+                          </span>
+                        </td>
+                        <td className="py-3 px-3">
+                          <div className="font-medium text-slate-100">{risk.title}</div>
+                          {risk.description && (
+                            <div className="text-[11px] text-slate-400 truncate max-w-xs">
+                              {risk.description}
+                            </div>
+                          )}
+                        </td>
+                        <td className="py-3 px-3 whitespace-nowrap">
+                          <div className="flex items-center gap-1.5 font-mono">
+                            <span
+                              className={`px-1.5 py-0.5 rounded font-bold text-xs ${
+                                risk.riskScore >= 16
+                                  ? 'bg-rose-950 text-rose-300 border border-rose-800'
+                                  : risk.riskScore >= 10
+                                  ? 'bg-amber-950 text-amber-300 border border-amber-800'
+                                  : 'bg-slate-950 text-slate-300 border border-slate-800'
+                              }`}
+                            >
+                              {risk.riskScore}
+                            </span>
+                            <span className="text-[10px] text-slate-400">
+                              (P{risk.probability}×I{risk.impact})
+                            </span>
+                          </div>
+                        </td>
+                        <td className="py-3 px-3 whitespace-nowrap">
+                          <PriorityBadge priority={risk.severity} />
+                        </td>
+                        <td className="py-3 px-3 whitespace-nowrap">
+                          <select
+                            value={risk.status}
+                            onChange={(e) =>
+                              handleStatusChange(risk.id, e.target.value as RiskStatus)
+                            }
+                            className="bg-slate-950 border border-slate-700 rounded px-2 py-1 text-[11px] text-slate-200 focus:outline-none focus:border-sky-500 font-mono"
+                          >
+                            <option value="OPEN">OPEN</option>
+                            <option value="MITIGATING">MITIGATING</option>
+                            <option value="ACCEPTED">ACCEPTED</option>
+                            <option value="RESOLVED">RESOLVED</option>
+                            <option value="CLOSED">CLOSED</option>
+                          </select>
+                        </td>
+                        <td className="py-3 px-3 whitespace-nowrap font-mono text-[11px]">
+                          {totalMitigations > 0 ? (
+                            <span
+                              className={`px-2 py-0.5 rounded ${
+                                completedMitigations === totalMitigations
+                                  ? 'bg-emerald-950/70 text-emerald-300 border border-emerald-800'
+                                  : 'bg-slate-800 text-slate-300 border border-slate-700'
+                              }`}
+                            >
+                              {completedMitigations}/{totalMitigations} actions
+                            </span>
+                          ) : (
+                            <span className="text-slate-500">None logged</span>
+                          )}
+                        </td>
+                        <td className="py-3 px-3 whitespace-nowrap text-slate-300">
+                          {risk.ownerFullName || (
+                            <span className="text-slate-500 italic">Unassigned</span>
+                          )}
+                        </td>
+                        <td className="py-3 px-3 whitespace-nowrap font-mono text-[11px] text-slate-400">
+                          {risk.dueDate || 'Continuous'}
+                        </td>
+                        <td className="py-3 px-3 text-right whitespace-nowrap">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedRiskId(risk.id);
+                              setIsMitigationModalOpen(true);
+                            }}
+                            className="px-2.5 py-1 text-[11px] font-semibold text-sky-300 bg-sky-950/70 border border-sky-800/80 rounded hover:bg-sky-900/70 transition inline-flex items-center gap-1 shadow-xs"
+                          >
+                            <Plus className="w-3 h-3" /> Control
+                          </button>
+                        </td>
+                      </tr>
+
+                      {/* Expandable Details Row */}
+                      {isExpanded && (
+                        <tr className="bg-slate-950/60">
+                          <td colSpan={10} className="p-4 pl-10 border-t border-slate-800/60">
+                            <div className="space-y-3">
+                              <div>
+                                <span className="text-[11px] font-mono uppercase text-slate-400 font-semibold block mb-1">
+                                  Full Risk Description:
+                                </span>
+                                <p className="text-xs text-slate-300 leading-relaxed">
+                                  {risk.description || 'No extended description provided.'}
+                                </p>
+                              </div>
+
+                              {risk.mitigationPlan && (
+                                <div className="bg-slate-900/90 border border-slate-800 rounded p-3 text-xs">
+                                  <span className="text-slate-400 font-semibold block mb-0.5">
+                                    Control Strategy:
+                                  </span>
+                                  <p className="text-slate-300 leading-relaxed">
+                                    {risk.mitigationPlan}
+                                  </p>
+                                </div>
+                              )}
+
+                              {risk.mitigations && risk.mitigations.length > 0 && (
+                                <div className="space-y-1.5 pt-2 border-t border-slate-800">
+                                  <span className="text-[10px] font-mono uppercase tracking-widest text-slate-400 font-semibold block">
+                                    Action Items ({risk.mitigations.length}):
+                                  </span>
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                    {risk.mitigations.map((m) => (
+                                      <div
+                                        key={m.id}
+                                        className="text-xs flex items-center gap-2 p-2 rounded bg-slate-900/80 border border-slate-800"
+                                      >
+                                        <CheckCircle2
+                                          className={`w-3.5 h-3.5 shrink-0 ${
+                                            m.completed ? 'text-emerald-400' : 'text-slate-600'
+                                          }`}
+                                        />
+                                        <span
+                                          className={
+                                            m.completed
+                                              ? 'line-through text-slate-500'
+                                              : 'text-slate-200 font-medium'
+                                          }
+                                        >
+                                          {m.actionTitle}
+                                        </span>
+                                        {m.ownerFullName && (
+                                          <span className="text-[10px] text-slate-400 font-mono ml-auto">
+                                            {m.ownerFullName}
+                                          </span>
+                                        )}
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </React.Fragment>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
       ) : (
+        /* Detailed Cards View */
         <div className="space-y-3.5">
-          {risks.map((risk) => (
+          {sortedRisks.map((risk) => (
             <div
               key={risk.id}
               className={`bg-slate-900 border rounded-lg p-5 transition ${
@@ -244,21 +566,35 @@ export const RisksPage: React.FC = () => {
 
                     <span className="text-xs font-mono px-2 py-0.5 rounded bg-slate-950 text-slate-200 border border-slate-800">
                       Risk Score:{' '}
-                      <strong className={risk.riskScore >= 16 ? 'text-rose-400 font-bold' : 'text-slate-100 font-semibold'}>
+                      <strong
+                        className={
+                          risk.riskScore >= 16
+                            ? 'text-rose-400 font-bold'
+                            : 'text-slate-100 font-semibold'
+                        }
+                      >
                         {risk.riskScore}
                       </strong>{' '}
-                      <span className="text-slate-400 text-[11px]">(P:{risk.probability} × I:{risk.impact})</span>
+                      <span className="text-slate-400 text-[11px]">
+                        (P:{risk.probability} × I:{risk.impact})
+                      </span>
                     </span>
                   </div>
 
-                  <h3 className="text-base font-semibold text-white tracking-tight">{risk.title}</h3>
+                  <h3 className="text-base font-semibold text-white tracking-tight">
+                    {risk.title}
+                  </h3>
 
-                  <p className="text-xs text-slate-300 mt-1.5 leading-relaxed">{risk.description}</p>
+                  <p className="text-xs text-slate-300 mt-1.5 leading-relaxed">
+                    {risk.description}
+                  </p>
 
                   {/* Mitigation Plan Overview */}
                   {risk.mitigationPlan && (
                     <div className="mt-3 text-xs bg-slate-950/80 border border-slate-800 rounded p-3">
-                      <span className="text-slate-400 font-semibold block mb-0.5">Control / Mitigation Strategy:</span>
+                      <span className="text-slate-400 font-semibold block mb-0.5">
+                        Control / Mitigation Strategy:
+                      </span>
                       <p className="text-slate-300 leading-relaxed">{risk.mitigationPlan}</p>
                     </div>
                   )}
@@ -272,13 +608,23 @@ export const RisksPage: React.FC = () => {
                       {risk.mitigations.map((m) => (
                         <div key={m.id} className="text-xs flex items-center gap-2 text-slate-300">
                           <CheckCircle2
-                            className={`w-3.5 h-3.5 ${m.completed ? 'text-emerald-400' : 'text-slate-600'}`}
+                            className={`w-3.5 h-3.5 ${
+                              m.completed ? 'text-emerald-400' : 'text-slate-600'
+                            }`}
                           />
-                          <span className={m.completed ? 'line-through text-slate-500' : 'text-slate-200 font-medium'}>
+                          <span
+                            className={
+                              m.completed
+                                ? 'line-through text-slate-500'
+                                : 'text-slate-200 font-medium'
+                            }
+                          >
                             {m.actionTitle}
                           </span>
                           {m.ownerFullName && (
-                            <span className="text-[10px] text-slate-400 font-mono">({m.ownerFullName})</span>
+                            <span className="text-[10px] text-slate-400 font-mono">
+                              ({m.ownerFullName})
+                            </span>
                           )}
                         </div>
                       ))}
@@ -286,7 +632,12 @@ export const RisksPage: React.FC = () => {
                   )}
 
                   <div className="mt-4 flex flex-wrap items-center gap-4 text-xs text-slate-400 font-mono">
-                    <span>Owner: <strong className="text-slate-300 font-normal">{risk.ownerFullName || 'Unassigned'}</strong></span>
+                    <span>
+                      Owner:{' '}
+                      <strong className="text-slate-300 font-normal">
+                        {risk.ownerFullName || 'Unassigned'}
+                      </strong>
+                    </span>
                     <span>•</span>
                     <span>{risk.dueDate ? `Due: ${risk.dueDate}` : 'Continuous Monitoring'}</span>
                   </div>

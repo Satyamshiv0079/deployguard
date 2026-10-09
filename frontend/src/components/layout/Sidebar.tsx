@@ -41,7 +41,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => 
       title: 'SECURITY & COMPLIANCE',
       items: [
         {
-          name: 'Audit Compliance',
+          name: 'Audit Logs & Governance',
           path: '/audit-logs',
           icon: FileText,
           show: isReviewer || isProjectManager || isAdmin,

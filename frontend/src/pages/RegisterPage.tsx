@@ -162,7 +162,7 @@ export const RegisterPage: React.FC = () => {
                 <ShieldCheck className="w-3.5 h-3.5" /> ASSIGNED CLEARANCE: DEVELOPER
               </div>
               <p className="text-[11px] text-slate-400 leading-relaxed">
-                Standard engineering clearance will be provisioned. Privilege elevations (Reviewer, PM, Admin) require an authorized PAM/IAM change request ticket.
+                Standard engineering clearance will be provisioned. Privilege elevations (Reviewer, PM, Admin) require an explicitly authorized administrative delegation.
               </p>
             </div>
 

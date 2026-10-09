@@ -61,11 +61,11 @@ export const AuditLogsPage: React.FC = () => {
           <div className="flex items-center gap-2">
             <FileText className="w-5 h-5 text-sky-400" />
             <h1 className="text-xl font-bold tracking-tight text-white">
-              Immutable Regulatory Audit Trail
+              Immutable Governance Audit Trail
             </h1>
           </div>
           <p className="text-xs text-slate-400 mt-1">
-            Tamper-evident activity ledger satisfying SOC2 Type II, ISO 27001, and banking governance standards.
+            Tamper-evident activity ledger tracking identity transitions, deployment sign-offs, and administrative actions.
           </p>
         </div>
 

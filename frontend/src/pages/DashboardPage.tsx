@@ -99,14 +99,14 @@ export const DashboardPage: React.FC = () => {
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-xl font-bold tracking-tight text-white">
-              Executive Release & Governance Command Center
+              Deployment &amp; Governance Dashboard
             </h1>
-            <span className="hidden md:inline-flex items-center gap-1 px-2 py-0.5 rounded bg-sky-950/80 text-sky-400 text-[10px] font-mono border border-sky-800/80">
-              <Activity className="w-3 h-3" /> LIVE AUDIT STREAM
+            <span className="hidden md:inline-flex items-center gap-1 px-2 py-0.5 rounded bg-amber-950/60 text-amber-300 text-[10px] font-mono border border-amber-800/80">
+              <Activity className="w-3 h-3" /> SANDBOX ENVIRONMENT
             </span>
           </div>
           <p className="text-xs text-slate-400 mt-1">
-            Real-time pipeline posture, four-eyes gate enforcement, and systemic risk telemetry.
+            Pipeline posture, four-eyes gate enforcement, and systemic risk telemetry.
           </p>
         </div>
 
@@ -138,10 +138,10 @@ export const DashboardPage: React.FC = () => {
           <div className="flex items-start md:items-center gap-2.5">
             <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5 md:mt-0" />
             <span className="text-slate-200">
-              <strong className="text-amber-300 font-semibold">Immediate Operational Oversight:</strong>{' '}
+              <strong className="text-amber-300 font-semibold">Action Items:</strong>{' '}
               {data.pendingDeployments > 0 && `${data.pendingDeployments} release(s) pending approval`}
               {data.pendingDeployments > 0 && data.criticalRisks > 0 && ' • '}
-              {data.criticalRisks > 0 && `${data.criticalRisks} critical risk exposure(s)`}
+              {data.criticalRisks > 0 && `${data.criticalRisks} critical risk(s)`}
               {(data.pendingDeployments > 0 || data.criticalRisks > 0) && data.overdueTasks > 0 && ' • '}
               {data.overdueTasks > 0 && `${data.overdueTasks} overdue sprint deliverable(s)`}
             </span>
