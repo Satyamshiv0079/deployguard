@@ -36,6 +36,21 @@ public class JwtUtils {
             throw new IllegalStateException("CRITICAL SECURITY ERROR: 'app.jwt.secret' must be configured.");
         }
 
+        String trimmed = jwtSecret.trim();
+        List<String> forbiddenPlaceholders = List.of(
+                "replace_with",
+                "your_secure_random",
+                "change_me",
+                "changeme",
+                "placeholder",
+                "default_secret"
+        );
+        for (String placeholder : forbiddenPlaceholders) {
+            if (trimmed.toLowerCase().contains(placeholder)) {
+                throw new IllegalStateException("CRITICAL SECURITY ERROR: Placeholder or default secret detected in 'app.jwt.secret'. You must configure a unique, secure secret.");
+            }
+        }
+
         byte[] keyBytes;
         try {
             keyBytes = Decoders.BASE64.decode(jwtSecret.trim());

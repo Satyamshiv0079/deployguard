@@ -313,6 +313,34 @@ mvn test
 5. **N+1 Query Prevention:**  
    Repositories (`DeploymentRepository`, `TaskRepository`, `RiskRepository`) use JPA `@EntityGraph` mappings to eagerly fetch associations in single SQL joins during pagination and specification queries.
 
+6. **Automated Secret Detection & Pre-Commit Hardening:**  
+   The repository includes a dedicated secret scanner (`scripts/scan-secrets.ps1`) and git pre-commit hook (`.githooks/pre-commit`). GitHub Actions CI automatically runs Gitleaks to enforce that verified credentials immediately break the pipeline.
+
+---
+
+## Secret Rotation & Incident Response Runbook
+
+In the event of suspected or confirmed credential exposure:
+
+1. **Immediate Revocation & Invalidation:**  
+   Immediately revoke the compromised credential in the identity provider or database management console. Never assume a credential is secure because a repository was private.
+2. **Access Log & Audit Inspection:**  
+   Review cloud provider audit logs (AWS CloudTrail, GitHub Audit Log, database query audit) and DeployGuard's immutable audit trail (`/api/audit-logs`) to determine if the compromised key was leveraged for unauthorized actions.
+3. **Purge Exposure from Source:**  
+   Replace any hardcoded values with environment variable references (`${VAR}`) and update `.env.example` with sanitized placeholders.
+4. **Update Approved Secret Store:**  
+   Inject the newly rotated credential into the enterprise secrets manager (e.g. AWS Secrets Manager, HashiCorp Vault, Kubernetes Secret, or GitHub Actions Secrets).
+5. **Redeploy Affected Services:**  
+   Trigger an automated rolling deployment across all clusters to distribute the newly rotated credential and discard running instances holding old tokens in memory.
+6. **Git History Remediation (If Necessary):**  
+   If an untrusted commit has leaked credentials onto a remote branch, execute history sanitization via `git-filter-repo`:
+   ```bash
+   git filter-repo --replace-text <(echo "leaked_secret==>REDACTED_SECRET")
+   git push origin main --force
+   ```
+7. **Verification & Proof of Invalidation:**  
+   Test the revoked credential against the target endpoint to mathematically prove that previous authentication tokens now return `401 Unauthorized`.
+
 ---
 
 ## Project Structure

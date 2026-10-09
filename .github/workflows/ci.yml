@@ -6,7 +6,29 @@ on:
   pull_request:
     branches: [ main, master ]
 
+permissions:
+  contents: read
+
 jobs:
+  security-and-secret-scan:
+    name: Automated Secret Detection & Security Audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Codebase (Full History for Secret Scan)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Gitleaks Secret Scanner
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_ENABLE_SUMMARY: true
+
+      - name: Audit Frontend Dependencies
+        working-directory: ./frontend
+        run: npm audit --audit-level=high --omit=dev
+
   backend-test-and-build:
     name: Backend Build & Automated Verification
     runs-on: ubuntu-latest
@@ -43,7 +65,7 @@ jobs:
           DATABASE_URL: jdbc:postgresql://localhost:5432/deployguard_ci
           DATABASE_USERNAME: postgres
           DATABASE_PASSWORD: postgres
-          JWT_SECRET: ${{ secrets.JWT_SECRET || 'ci-ephemeral-build-key-for-automated-tests-must-be-min-256-bits!!' }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET || 'dGVzdC1kZXZlbG9wbWVudC1vbmx5LWtleS1ub3QtZm9yLXByb2R1Y3Rpb24tdXNlLTI1NmJpdHM=' }}
         run: mvn clean test --batch-mode
 
       - name: Package Spring Boot Application JAR
@@ -88,8 +110,8 @@ jobs:
           retention-days: 7
 
   docker-image-build:
-    name: Container Image Build & Vulnerability Verification
-    needs: [backend-test-and-build, frontend-build]
+    name: Container Image Build & Verification
+    needs: [security-and-secret-scan, backend-test-and-build, frontend-build]
     runs-on: ubuntu-latest
 
     steps:

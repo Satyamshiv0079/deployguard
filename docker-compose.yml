@@ -1,5 +1,8 @@
 version: '3.8'
 
+# NOTE: Docker Compose environment variables and defaults are intended for local
+# container development only. They are NOT a substitute for an enterprise secrets manager
+# (such as AWS Secrets Manager, HashiCorp Vault, or Kubernetes Secrets) in production.
 services:
   postgres:
     image: postgres:16-alpine

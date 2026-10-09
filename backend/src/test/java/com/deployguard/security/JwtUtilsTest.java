@@ -30,11 +30,21 @@ class JwtUtilsTest {
     }
 
     @Test
-    @DisplayName("Should successfully initialize with valid 256-bit secret")
+    @DisplayName("Should reject placeholder or template secret at startup")
+    void shouldRejectPlaceholderSecret() {
+        JwtUtils jwtUtils = new JwtUtils();
+        ReflectionTestUtils.setField(jwtUtils, "jwtSecret", "your_secure_random_base64_or_hex_encoded_key_min_256_bits");
+
+        IllegalStateException ex = assertThrows(IllegalStateException.class, jwtUtils::initAndValidateKey);
+        assertTrue(ex.getMessage().contains("Placeholder or default secret detected"));
+    }
+
+    @Test
+    @DisplayName("Should successfully initialize with valid 256-bit synthetic secret")
     void shouldAcceptValid256BitSecret() {
         JwtUtils jwtUtils = new JwtUtils();
-        // 32+ bytes secret
-        ReflectionTestUtils.setField(jwtUtils, "jwtSecret", "404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970");
+        // Synthetic 256-bit base64 key
+        ReflectionTestUtils.setField(jwtUtils, "jwtSecret", "dGVzdC1kZXZlbG9wbWVudC1vbmx5LWtleS1ub3QtZm9yLXByb2R1Y3Rpb24tdXNlLTI1NmJpdHM=");
         ReflectionTestUtils.setField(jwtUtils, "jwtExpirationMs", 3600000L);
 
         assertDoesNotThrow(jwtUtils::initAndValidateKey);

@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+# DeployGuard Git Pre-Commit Hook - Secrets Leakage Prevention
+# Activate via: git config core.hooksPath .githooks
+
+echo "Running DeployGuard pre-commit secrets scan..."
+
+PATTERNS=(
+  "AKIA[0-9A-Z]{16}"
+  "ghp_[0-9a-zA-Z]{36}"
+  "github_pat_[0-9a-zA-Z_]{82}"
+  "-----BEGIN (RSA|EC|DSA|OPENSSH|PGP) PRIVATE KEY-----"
+  "Bearer[[:space:]]+eyJ[A-Za-z0-9_-]+\.eyJ"
+  "https://hooks\.slack\.com/services/"
+)
+
+FAILED=0
+for pattern in "${PATTERNS[@]}"; do
+  if git diff --cached --name-only -z | xargs -0 grep -E -n "$pattern" /dev/null 2>/dev/null; then
+    echo "CRITICAL: Potential credential matching '$pattern' found in staged changes! [REDACTED]"
+    FAILED=1
+  fi
+done
+
+if [ $FAILED -ne 0 ]; then
+  echo "Commit rejected due to potential secret leakage."
+  exit 1
+fi
+
+echo "Pre-commit secret scan passed."
+exit 0
