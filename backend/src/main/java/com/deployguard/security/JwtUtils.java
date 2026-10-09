@@ -9,6 +9,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Component;
 
+import jakarta.annotation.PostConstruct;
+
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
@@ -26,14 +28,31 @@ public class JwtUtils {
     @Value("${app.jwt.expiration-ms:86400000}")
     private long jwtExpirationMs;
 
-    private SecretKey getSigningKey() {
+    private SecretKey signingKey;
+
+    @PostConstruct
+    public void initAndValidateKey() {
+        if (jwtSecret == null || jwtSecret.trim().isEmpty()) {
+            throw new IllegalStateException("CRITICAL SECURITY ERROR: 'app.jwt.secret' must be configured.");
+        }
+
         byte[] keyBytes;
         try {
-            keyBytes = Decoders.BASE64.decode(jwtSecret);
+            keyBytes = Decoders.BASE64.decode(jwtSecret.trim());
         } catch (Exception e) {
-            keyBytes = jwtSecret.getBytes(StandardCharsets.UTF_8);
+            keyBytes = jwtSecret.trim().getBytes(StandardCharsets.UTF_8);
         }
-        return Keys.hmacShaKeyFor(keyBytes);
+
+        if (keyBytes.length < 32) {
+            throw new IllegalStateException("CRITICAL SECURITY ERROR: Configured JWT secret is " + (keyBytes.length * 8) +
+                    " bits. HMAC-SHA signing requires a minimum of 256 bits (32 bytes).");
+        }
+
+        this.signingKey = Keys.hmacShaKeyFor(keyBytes);
+    }
+
+    private SecretKey getSigningKey() {
+        return this.signingKey;
     }
 
     public String generateJwtToken(UserDetailsImpl userPrincipal) {

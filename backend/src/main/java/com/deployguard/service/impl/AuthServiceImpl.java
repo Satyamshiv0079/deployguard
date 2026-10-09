@@ -88,27 +88,12 @@ public class AuthServiceImpl implements AuthService {
             throw new ConflictException("Email is already registered: " + registerRequest.getEmail());
         }
 
+        // Enterprise Security: Public registration strictly assigns ROLE_DEVELOPER.
+        // Administrative privilege assignment must occur via the authorized admin endpoint.
+        Role developerRole = roleRepository.findByName(RoleType.ROLE_DEVELOPER)
+                .orElseGet(() -> roleRepository.save(new Role(RoleType.ROLE_DEVELOPER)));
         Set<Role> roles = new HashSet<>();
-        if (registerRequest.getRoles() == null || registerRequest.getRoles().isEmpty()) {
-            Role defaultRole = roleRepository.findByName(RoleType.ROLE_DEVELOPER)
-                    .orElseGet(() -> roleRepository.save(new Role(RoleType.ROLE_DEVELOPER)));
-            roles.add(defaultRole);
-        } else {
-            for (String roleName : registerRequest.getRoles()) {
-                String normalized = roleName.trim().toUpperCase();
-                if (!normalized.startsWith("ROLE_")) {
-                    normalized = "ROLE_" + normalized;
-                }
-                try {
-                    RoleType roleType = RoleType.valueOf(normalized);
-                    Role role = roleRepository.findByName(roleType)
-                            .orElseGet(() -> roleRepository.save(new Role(roleType)));
-                    roles.add(role);
-                } catch (IllegalArgumentException e) {
-                    throw new BadRequestException("Invalid role specified: " + roleName);
-                }
-            }
-        }
+        roles.add(developerRole);
 
         User user = User.builder()
                 .username(registerRequest.getUsername().trim())

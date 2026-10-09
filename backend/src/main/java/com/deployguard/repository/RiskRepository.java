@@ -21,6 +21,10 @@ public interface RiskRepository extends JpaRepository<Risk, UUID>, JpaSpecificat
     @EntityGraph(attributePaths = {"project", "owner", "mitigations", "mitigations.owner"})
     Optional<Risk> findWithDetailsById(UUID id);
 
+    @Override
+    @EntityGraph(attributePaths = {"project", "owner"})
+    Page<Risk> findAll(org.springframework.data.jpa.domain.Specification<Risk> spec, Pageable pageable);
+
     @EntityGraph(attributePaths = {"project", "owner"})
     Page<Risk> findByProjectId(UUID projectId, Pageable pageable);
 

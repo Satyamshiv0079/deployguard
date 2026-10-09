@@ -21,6 +21,10 @@ public interface DeploymentRepository extends JpaRepository<Deployment, UUID>, J
     @EntityGraph(attributePaths = {"project", "requestedBy", "approvals", "approvals.reviewer"})
     Optional<Deployment> findWithDetailsById(UUID id);
 
+    @Override
+    @EntityGraph(attributePaths = {"project", "requestedBy"})
+    Page<Deployment> findAll(org.springframework.data.jpa.domain.Specification<Deployment> spec, Pageable pageable);
+
     @EntityGraph(attributePaths = {"project", "requestedBy"})
     Page<Deployment> findAllByOrderByCreatedAtDesc(Pageable pageable);
 

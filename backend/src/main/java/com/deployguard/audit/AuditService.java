@@ -9,5 +9,6 @@ public interface AuditService {
     void log(String username, AuditAction action, String entityType, String entityId, String description);
     void log(String username, AuditAction action, String entityType, String entityId, String ipAddress, String description);
     void logCurrent(AuditAction action, String entityType, String entityId, String description);
+    void logSecurityEvent(String username, AuditAction action, String entityType, String entityId, String description);
     PagedResponse<AuditLogResponse> getAuditLogs(String username, String action, String entityType, Pageable pageable);
 }

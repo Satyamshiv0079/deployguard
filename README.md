@@ -276,33 +276,42 @@ mvn test
 ### Test Results
 ```
 [INFO] Running com.deployguard.controller.AuthControllerIntegrationTest
-[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0
-[INFO] Running com.deployguard.service.DeploymentServiceTest
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0
+[INFO] Running com.deployguard.security.JwtUtilsTest
 [INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0
+[INFO] Running com.deployguard.service.DeploymentServiceTest
+[INFO] Tests run: 10, Failures: 0, Errors: 0, Skipped: 0
 [INFO] Running com.deployguard.service.RiskServiceTest
 [INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0
 [INFO] Running com.deployguard.service.TaskServiceTest
 [INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0
 [INFO] -------------------------------------------------------
-[INFO] Results: Tests run: 12, Failures: 0, Errors: 0, Skipped: 0
+[INFO] Results: Tests run: 24, Failures: 0, Errors: 0, Skipped: 0
 [INFO] BUILD SUCCESS
 ```
 
 ---
 
-## Engineering Decisions & Architecture Rationale
+## Security Architecture & Quality Engineering
 
-1. **Why Modular Monolith over Microservices?**  
-   In regulated release governance, atomic transactions across deployments, approvals, and audit logs are paramount. Distributed transactions (2PC or Saga) add operational complexity without delivering added resilience for internal governance platforms. A modular monolith provides strict domain boundary separation while ensuring immediate consistency.
+1. **Privilege Escalation Protection:**  
+   Public registration (`/api/auth/register`) strictly assigns `ROLE_DEVELOPER` and ignores any client-supplied roles in the payload. Administrative privilege modification is sequestered to `PUT /api/users/{id}/roles` protected by `@PreAuthorize("hasRole('ADMIN')")`.
 
-2. **Why Separate Transaction for Audit Logs (`Propagation.REQUIRES_NEW`)?**  
-   Audit logging must record failure attempts and authentication anomalies even if the surrounding business transaction fails or rolls back. Using `REQUIRES_NEW` guarantees the audit entry commits independently of business transaction boundaries.
+2. **Cryptographic Key & Secret Hardening:**  
+   The platform requires an externally configured `JWT_SECRET` in production with zero hardcoded fallbacks in `application.yml` or `docker-compose.yml`. At startup, `JwtUtils` executes a `@PostConstruct` validation enforcing a minimum of 256 bits (32 bytes) for HMAC-SHA algorithms, failing fast if the key is missing or weak.
 
-3. **Why Prevent Self-Approval in Code instead of UI Only?**  
-   UI validation is trivial to bypass via direct REST calls (e.g., Postman or cURL). The four-eyes constraint is strictly enforced in the service layer (`DeploymentServiceImpl`), ensuring that API clients and automated CI agents cannot approve their own release packages.
+3. **Deployment Workflow & Four-Eyes Principle:**  
+   - Requester cannot approve their own deployment request (enforced in service layer).
+   - Unapproved deployments cannot execute (`BadRequestException`).
+   - Deployments to `PRODUCTION` and `STAGING` automatically enter `UNDER_REVIEW`.
+   - Rollback strictly requires a `SUCCESSFUL` deployment and a nonblank reason.
+   - Non-members and unauthorized users cannot mutate deployments or deploy to archived projects.
 
-4. **Why DTOs and No Direct JPA Entity Exposure?**  
-   Exposing JPA entities directly invites JSON serialization recursion (infinite loops in bidirectional relationships), leaks sensitive database columns (such as password hashes), and tightly couples the REST contract to the database schema.
+4. **Audit Trail Integrity:**  
+   Standard business audit logging uses `Propagation.REQUIRED` so that if a business transaction encounters an error and rolls back, the audit log rolls back atomically, preventing phantom or misleading audit entries. Dedicated security incident logging uses `Propagation.REQUIRES_NEW`.
+
+5. **N+1 Query Prevention:**  
+   Repositories (`DeploymentRepository`, `TaskRepository`, `RiskRepository`) use JPA `@EntityGraph` mappings to eagerly fetch associations in single SQL joins during pagination and specification queries.
 
 ---
 

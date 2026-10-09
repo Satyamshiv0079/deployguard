@@ -4,6 +4,7 @@ public enum AuditAction {
     LOGIN,
     LOGOUT,
     USER_CREATED,
+    USER_UPDATED,
     PROJECT_CREATED,
     PROJECT_UPDATED,
     PROJECT_ARCHIVED,

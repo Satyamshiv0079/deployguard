@@ -32,14 +32,14 @@ public class AuditServiceImpl implements AuditService {
     private final AuditLogMapper auditLogMapper;
 
     @Override
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    @Transactional(propagation = Propagation.REQUIRED)
     public void log(String username, AuditAction action, String entityType, String entityId, String description) {
         String ip = extractClientIp();
         log(username, action, entityType, entityId, ip, description);
     }
 
     @Override
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    @Transactional(propagation = Propagation.REQUIRED)
     public void log(String username, AuditAction action, String entityType, String entityId, String ipAddress, String description) {
         try {
             AuditLog auditLog = AuditLog.builder()
@@ -60,13 +60,19 @@ public class AuditServiceImpl implements AuditService {
     }
 
     @Override
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    @Transactional(propagation = Propagation.REQUIRED)
     public void logCurrent(AuditAction action, String entityType, String entityId, String description) {
         String username = "ANONYMOUS";
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getPrincipal())) {
             username = auth.getName();
         }
+        log(username, action, entityType, entityId, extractClientIp(), description);
+    }
+
+    @Override
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void logSecurityEvent(String username, AuditAction action, String entityType, String entityId, String description) {
         log(username, action, entityType, entityId, extractClientIp(), description);
     }
 

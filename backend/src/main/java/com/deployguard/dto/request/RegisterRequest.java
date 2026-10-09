@@ -33,6 +33,4 @@ public class RegisterRequest {
     private String fullName;
 
     private String department;
-
-    private Set<String> roles;
 }

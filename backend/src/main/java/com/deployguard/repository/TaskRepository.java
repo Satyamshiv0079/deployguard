@@ -22,6 +22,10 @@ public interface TaskRepository extends JpaRepository<Task, UUID>, JpaSpecificat
     @EntityGraph(attributePaths = {"project", "assignee", "reporter", "dependencies"})
     Optional<Task> findWithDetailsById(UUID id);
 
+    @Override
+    @EntityGraph(attributePaths = {"project", "assignee", "reporter"})
+    Page<Task> findAll(org.springframework.data.jpa.domain.Specification<Task> spec, Pageable pageable);
+
     @EntityGraph(attributePaths = {"assignee", "reporter", "dependencies"})
     List<Task> findByProjectId(UUID projectId);
 

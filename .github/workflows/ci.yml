@@ -43,7 +43,7 @@ jobs:
           DATABASE_URL: jdbc:postgresql://localhost:5432/deployguard_ci
           DATABASE_USERNAME: postgres
           DATABASE_PASSWORD: postgres
-          JWT_SECRET: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+          JWT_SECRET: ${{ secrets.JWT_SECRET || 'ci-ephemeral-build-key-for-automated-tests-must-be-min-256-bits!!' }}
         run: mvn clean test --batch-mode
 
       - name: Package Spring Boot Application JAR

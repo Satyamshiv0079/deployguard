@@ -14,6 +14,7 @@ import com.deployguard.entity.enums.ApprovalStatus;
 import com.deployguard.entity.enums.AuditAction;
 import com.deployguard.entity.enums.DeploymentEnvironment;
 import com.deployguard.entity.enums.DeploymentStatus;
+import com.deployguard.entity.enums.RoleType;
 import com.deployguard.exception.BadRequestException;
 import com.deployguard.exception.ForbiddenException;
 import com.deployguard.exception.ResourceNotFoundException;
@@ -51,9 +52,22 @@ public class DeploymentServiceImpl implements DeploymentService {
         Project project = projectRepository.findById(request.getProjectId())
                 .orElseThrow(() -> new ResourceNotFoundException("Project", "id", request.getProjectId()));
 
+        if (project.isArchived()) {
+            throw new BadRequestException("Cannot request deployment for an archived project: " + project.getName());
+        }
+
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         User requester = userRepository.findByUsername(username)
                 .orElseThrow(() -> new ResourceNotFoundException("Authenticated user not found."));
+
+        boolean isAdminOrPm = requester.getRoles().stream()
+                .anyMatch(r -> r.getName() == RoleType.ROLE_ADMIN || r.getName() == RoleType.ROLE_PROJECT_MANAGER);
+        boolean isMember = (project.getMembers() != null && project.getMembers().stream().anyMatch(m -> m.getId().equals(requester.getId()))) ||
+                (project.getCreatedBy() != null && project.getCreatedBy().getId().equals(requester.getId()));
+
+        if (!isAdminOrPm && !isMember) {
+            throw new ForbiddenException("Access denied: You are not an assigned member of project '" + project.getName() + "'.");
+        }
 
         boolean requiresReview = (request.getEnvironment() == DeploymentEnvironment.PRODUCTION ||
                 request.getEnvironment() == DeploymentEnvironment.STAGING);
@@ -197,6 +211,19 @@ public class DeploymentServiceImpl implements DeploymentService {
             throw new BadRequestException("Deployment must be APPROVED before execution. Current status: " + deployment.getStatus());
         }
 
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        User caller = userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException("Authenticated user not found."));
+
+        boolean isAdminOrPm = caller.getRoles().stream()
+                .anyMatch(r -> r.getName() == RoleType.ROLE_ADMIN || r.getName() == RoleType.ROLE_PROJECT_MANAGER);
+        boolean isMember = (deployment.getProject().getMembers() != null && deployment.getProject().getMembers().stream().anyMatch(m -> m.getId().equals(caller.getId()))) ||
+                (deployment.getProject().getCreatedBy() != null && deployment.getProject().getCreatedBy().getId().equals(caller.getId()));
+
+        if (!isAdminOrPm && !isMember) {
+            throw new ForbiddenException("Access denied: You are not authorized to execute deployments for project '" + deployment.getProject().getName() + "'.");
+        }
+
         deployment.setStatus(DeploymentStatus.SUCCESSFUL);
         deployment.setExecutedAt(Instant.now());
 
@@ -211,11 +238,28 @@ public class DeploymentServiceImpl implements DeploymentService {
     @Override
     @Transactional
     public DeploymentResponse rollbackDeployment(UUID id, DeploymentRollbackRequest request) {
+        if (request == null || request.getReason() == null || request.getReason().trim().isEmpty()) {
+            throw new BadRequestException("Rollback reason cannot be blank.");
+        }
+
         Deployment deployment = deploymentRepository.findWithDetailsById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Deployment", "id", id));
 
         if (deployment.getStatus() != DeploymentStatus.SUCCESSFUL) {
             throw new BadRequestException("Only SUCCESSFUL deployments can be rolled back. Current status: " + deployment.getStatus());
+        }
+
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        User caller = userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException("Authenticated user not found."));
+
+        boolean isAdminOrPmOrRev = caller.getRoles().stream()
+                .anyMatch(r -> r.getName() == RoleType.ROLE_ADMIN || r.getName() == RoleType.ROLE_PROJECT_MANAGER || r.getName() == RoleType.ROLE_REVIEWER);
+        boolean isMember = (deployment.getProject().getMembers() != null && deployment.getProject().getMembers().stream().anyMatch(m -> m.getId().equals(caller.getId()))) ||
+                (deployment.getProject().getCreatedBy() != null && deployment.getProject().getCreatedBy().getId().equals(caller.getId()));
+
+        if (!isAdminOrPmOrRev && !isMember) {
+            throw new ForbiddenException("Access denied: You are not authorized to initiate rollback for project '" + deployment.getProject().getName() + "'.");
         }
 
         deployment.setStatus(DeploymentStatus.ROLLED_BACK);
