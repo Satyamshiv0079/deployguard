@@ -9,10 +9,14 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Component;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.env.Environment;
+
 import jakarta.annotation.PostConstruct;
 
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -21,6 +25,9 @@ import java.util.stream.Collectors;
 public class JwtUtils {
 
     private static final Logger log = LoggerFactory.getLogger(JwtUtils.class);
+
+    @Autowired(required = false)
+    private Environment environment;
 
     @Value("${app.jwt.secret}")
     private String jwtSecret;
@@ -48,6 +55,20 @@ public class JwtUtils {
         for (String placeholder : forbiddenPlaceholders) {
             if (trimmed.toLowerCase().contains(placeholder)) {
                 throw new IllegalStateException("CRITICAL SECURITY ERROR: Placeholder or default secret detected in 'app.jwt.secret'. You must configure a unique, secure secret.");
+            }
+        }
+
+        // Prevent usage of known test-only keys in non-test environments
+        if (environment != null && !Arrays.asList(environment.getActiveProfiles()).contains("test")) {
+            List<String> testSecretKeywords = List.of(
+                    "test-only",
+                    "dGVzdC1kZXZlbG9wbWVud",
+                    "ZGVwbG95Z3VhcmQtdGVzdC1vbmx5"
+            );
+            for (String kw : testSecretKeywords) {
+                if (trimmed.contains(kw)) {
+                    throw new IllegalStateException("CRITICAL SECURITY ERROR: Test-only JWT secret detected in non-test runtime environment. A secure, unique production secret must be provided.");
+                }
             }
         }
 

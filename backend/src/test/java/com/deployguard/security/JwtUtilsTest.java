@@ -4,6 +4,9 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import org.mockito.Mockito;
+import org.springframework.core.env.Environment;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 class JwtUtilsTest {
@@ -40,12 +43,42 @@ class JwtUtilsTest {
     }
 
     @Test
-    @DisplayName("Should successfully initialize with valid 256-bit synthetic secret")
-    void shouldAcceptValid256BitSecret() {
+    @DisplayName("Should successfully initialize with deterministic test-only secret in test environment")
+    void shouldAcceptValidDeterministicTestSecret() {
         JwtUtils jwtUtils = new JwtUtils();
-        // Synthetic 256-bit base64 key
-        ReflectionTestUtils.setField(jwtUtils, "jwtSecret", "dGVzdC1kZXZlbG9wbWVudC1vbmx5LWtleS1ub3QtZm9yLXByb2R1Y3Rpb24tdXNlLTI1NmJpdHM=");
+        Environment env = Mockito.mock(Environment.class);
+        Mockito.when(env.getActiveProfiles()).thenReturn(new String[]{"test"});
+        ReflectionTestUtils.setField(jwtUtils, "environment", env);
+        ReflectionTestUtils.setField(jwtUtils, "jwtSecret", "ZGVwbG95Z3VhcmQtdGVzdC1vbmx5LWRldGVybWluaXN0aWMtMjU2Yml0LXNpZ25pbmcta2V5IQ==");
         ReflectionTestUtils.setField(jwtUtils, "jwtExpirationMs", 3600000L);
+
+        assertDoesNotThrow(jwtUtils::initAndValidateKey);
+    }
+
+    @Test
+    @DisplayName("Should strictly reject test-only secret when starting up in production profile")
+    void shouldRejectTestSecretInProductionEnvironment() {
+        JwtUtils jwtUtils = new JwtUtils();
+        Environment env = Mockito.mock(Environment.class);
+        Mockito.when(env.getActiveProfiles()).thenReturn(new String[]{"prod"});
+        ReflectionTestUtils.setField(jwtUtils, "environment", env);
+        ReflectionTestUtils.setField(jwtUtils, "jwtSecret", "ZGVwbG95Z3VhcmQtdGVzdC1vbmx5LWRldGVybWluaXN0aWMtMjU2Yml0LXNpZ25pbmcta2V5IQ==");
+        ReflectionTestUtils.setField(jwtUtils, "jwtExpirationMs", 3600000L);
+
+        IllegalStateException ex = assertThrows(IllegalStateException.class, jwtUtils::initAndValidateKey);
+        assertTrue(ex.getMessage().contains("Test-only JWT secret detected in non-test runtime environment"));
+    }
+
+    @Test
+    @DisplayName("Should successfully accept valid 256-bit production secret in production profile")
+    void shouldAcceptValidProductionSecretInProductionProfile() {
+        JwtUtils jwtUtils = new JwtUtils();
+        Environment env = Mockito.mock(Environment.class);
+        Mockito.when(env.getActiveProfiles()).thenReturn(new String[]{"prod"});
+        ReflectionTestUtils.setField(jwtUtils, "environment", env);
+        // Valid 256-bit base64 production key without test keywords
+        ReflectionTestUtils.setField(jwtUtils, "jwtSecret", "c3VwZXJTZWN1cmVQcm9kdWN0aW9uS2V5TXVzdEJlQXRMZWFzdDI1NkJpdHMyMDI2IQ==");
+        ReflectionTestUtils.setField(jwtUtils, "jwtExpirationMs", 86400000L);
 
         assertDoesNotThrow(jwtUtils::initAndValidateKey);
     }

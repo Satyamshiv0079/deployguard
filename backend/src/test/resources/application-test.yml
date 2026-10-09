@@ -15,7 +15,7 @@ spring:
 
 app:
   jwt:
-    secret: ${JWT_SECRET:dGVzdC1kZXZlbG9wbWVudC1vbmx5LWtleS1ub3QtZm9yLXByb2R1Y3Rpb24tdXNlLTI1NmJpdHM=}
+    secret: ${TEST_JWT_SECRET:ZGVwbG95Z3VhcmQtdGVzdC1vbmx5LWRldGVybWluaXN0aWMtMjU2Yml0LXNpZ25pbmcta2V5IQ==}
     expiration-ms: 3600000
 
 logging:
