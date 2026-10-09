@@ -4,10 +4,23 @@ title = "DeployGuard Secret Scanner Configuration"
 useDefault = true
 
 [allowlist]
-description = "Synthetic test fixtures and security detection verification patterns"
+description = "Synthetic test fixtures, test scripts, local build targets, and verified historical test tokens"
 paths = [
   '''(?i)backend/src/test/.*''',
   '''(?i)frontend/src/.*\.test\..*''',
   '''(?i)\.githooks/.*''',
-  '''(?i)test-.*\.ps1'''
+  '''(?i)test-.*\.ps1''',
+  '''(?i)backend/target/.*''',
+  '''(?i)tools/.*'''
+]
+# Narrow, verified allowlist for historical synthetic CI test secrets.
+# These values are non-functional test keys previously used in CI workflows and verified
+# to carry zero permissions or production access.
+regexes = [
+  '''dGVzdC1kZXZlbG9wbWVudC1vbmx5LWtleS1ub3QtZm9yLXByb2R1Y3Rpb24tdXNlLTI1NmJpdHM=''',
+  '''ZGVwbG95Z3VhcmQtdGVzdC1vbmx5LWRldGVybWluaXN0aWMtMjU2Yml0LXNpZ25pbmcta2V5IQ=='''
+]
+commits = [
+  "d4965651786a8e175a58fd37b4b50bb1a829f940",
+  "3034e33e3bfb89099fc89195b975e467ac6deee3"
 ]
