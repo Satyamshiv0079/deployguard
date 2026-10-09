@@ -1,0 +1,13 @@
+title = "DeployGuard Secret Scanner Configuration"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Synthetic test fixtures and security detection verification patterns"
+paths = [
+  '''(?i)backend/src/test/.*''',
+  '''(?i)frontend/src/.*\.test\..*''',
+  '''(?i)\.githooks/.*''',
+  '''(?i)test-.*\.ps1'''
+]

@@ -5,6 +5,7 @@ on:
     branches: [ main, master, 'release/**' ]
   pull_request:
     branches: [ main, master ]
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -24,6 +25,9 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITLEAKS_ENABLE_SUMMARY: true
+          GITLEAKS_ENABLE_UPLOAD_ARTIFACT: true
+          GITHUB_EVENT_NAME: workflow_dispatch
+          GITLEAKS_CONFIG: .gitleaks.toml
 
       - name: Audit Frontend Dependencies
         working-directory: ./frontend

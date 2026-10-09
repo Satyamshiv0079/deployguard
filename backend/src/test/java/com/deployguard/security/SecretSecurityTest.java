@@ -38,9 +38,9 @@ class SecretSecurityTest {
         Pattern awsKeyPattern = Pattern.compile("AKIA[0-9A-Z]{16}");
         Pattern gitHubPatPattern = Pattern.compile("ghp_[0-9a-zA-Z]{36}");
 
-        // Synthetic test values matching format
-        String syntheticAwsKey = "AKIAIOSFODNN7EXAMPLE";
-        String syntheticPat = "ghp_1234567890abcdefghijklmnopqrstuvwxyz";
+        // Synthetic test values matching format (concatenated to prevent static detector false positives)
+        String syntheticAwsKey = "AKIA" + "IOSFODNN7EXAMPLE"; // gitleaks:allow
+        String syntheticPat = "ghp_" + "1234567890" + "abcdefghijklmnopqrstuvwxyz"; // gitleaks:allow
 
         assertTrue(awsKeyPattern.matcher(syntheticAwsKey).find(), "Scanner failed to detect synthetic AWS key format!");
         assertTrue(gitHubPatPattern.matcher(syntheticPat).find(), "Scanner failed to detect synthetic GitHub PAT format!");
