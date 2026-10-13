@@ -11,4 +11,5 @@ public interface AuditService {
     void logCurrent(AuditAction action, String entityType, String entityId, String description);
     void logSecurityEvent(String username, AuditAction action, String entityType, String entityId, String description);
     PagedResponse<AuditLogResponse> getAuditLogs(String username, String action, String entityType, Pageable pageable);
+    boolean verifyIntegrity();
 }

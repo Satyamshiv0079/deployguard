@@ -8,7 +8,9 @@ import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Profile;
+import org.springframework.core.annotation.Order;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,10 +22,13 @@ import java.util.List;
 import java.util.Set;
 
 @Component
+@Order(2)
+@Profile({"demo", "dev", "test"})
+@ConditionalOnProperty(name = "app.demo.seed-data", havingValue = "true", matchIfMissing = false)
 @RequiredArgsConstructor
-public class DataInitializer implements CommandLineRunner {
+public class DemoDataInitializer implements CommandLineRunner {
 
-    private static final Logger log = LoggerFactory.getLogger(DataInitializer.class);
+    private static final Logger log = LoggerFactory.getLogger(DemoDataInitializer.class);
 
     private final RoleRepository roleRepository;
     private final UserRepository userRepository;
@@ -39,30 +44,23 @@ public class DataInitializer implements CommandLineRunner {
     @Override
     @Transactional
     public void run(String... args) {
-        if (roleRepository.count() > 0 && userRepository.count() > 0) {
-            log.info("Database already seeded. Skipping initial data generation.");
+        if (userRepository.findByUsername("pm_sarah").isPresent()) {
+            log.info("Demo dataset already present. Skipping demo data seeding.");
             return;
         }
 
-        log.info("Initializing DeployGuard production-like enterprise seed data...");
+        log.info("Explicit demo profile active: seeding local evaluation data...");
 
-        // 1. Roles
-        Role adminRole = roleRepository.save(new Role(RoleType.ROLE_ADMIN));
-        Role pmRole = roleRepository.save(new Role(RoleType.ROLE_PROJECT_MANAGER));
-        Role devRole = roleRepository.save(new Role(RoleType.ROLE_DEVELOPER));
-        Role reviewerRole = roleRepository.save(new Role(RoleType.ROLE_REVIEWER));
+        Role pmRole = roleRepository.findByName(RoleType.ROLE_PROJECT_MANAGER)
+                .orElseGet(() -> roleRepository.save(new Role(RoleType.ROLE_PROJECT_MANAGER)));
+        Role devRole = roleRepository.findByName(RoleType.ROLE_DEVELOPER)
+                .orElseGet(() -> roleRepository.save(new Role(RoleType.ROLE_DEVELOPER)));
+        Role reviewerRole = roleRepository.findByName(RoleType.ROLE_REVIEWER)
+                .orElseGet(() -> roleRepository.save(new Role(RoleType.ROLE_REVIEWER)));
 
-        // 2. Users
-        User admin = userRepository.save(User.builder()
-                .username("admin")
-                .email("admin@deployguard.internal")
-                .password(passwordEncoder.encode("Admin@123456"))
-                .fullName("System Administrator")
-                .department("Enterprise IT Architecture")
-                .active(true)
-                .roles(Set.of(adminRole, pmRole, devRole, reviewerRole))
-                .build());
+        User admin = userRepository.findByUsername("admin").orElse(null);
 
+        // Demo Users for local testing & interactive evaluation
         User pmSarah = userRepository.save(User.builder()
                 .username("pm_sarah")
                 .email("sarah.jenkins@deployguard.internal")
@@ -93,7 +91,7 @@ public class DataInitializer implements CommandLineRunner {
                 .roles(Set.of(reviewerRole))
                 .build());
 
-        // 3. Projects
+        // Demo Projects
         Project csg = projectRepository.save(Project.builder()
                 .name("Core Settlement Gateway")
                 .key("CSG-01")
@@ -127,11 +125,11 @@ public class DataInitializer implements CommandLineRunner {
                 .startDate(LocalDate.now().minusMonths(6))
                 .targetEndDate(LocalDate.now().minusMonths(1))
                 .actualEndDate(LocalDate.now().minusMonths(1))
-                .createdBy(admin)
-                .members(new HashSet<>(List.of(admin, pmSarah, devAlex)))
+                .createdBy(admin != null ? admin : pmSarah)
+                .members(new HashSet<>(List.of(pmSarah, devAlex)))
                 .build());
 
-        // 4. Tasks
+        // Demo Tasks
         Task taskMtls = taskRepository.save(Task.builder()
                 .title("Implement mutual TLS certificate automated rotation")
                 .description("Configure Vault agent sidecar to automatically refresh mTLS certs before 72h expiration.")
@@ -171,14 +169,14 @@ public class DataInitializer implements CommandLineRunner {
                 .description("Recalibrate ensemble model parameters to minimize false positive rate below 0.02%.")
                 .status(TaskStatus.BLOCKED)
                 .priority(Priority.CRITICAL)
-                .dueDate(LocalDate.now().minusDays(2)) // Overdue!
+                .dueDate(LocalDate.now().minusDays(2))
                 .blockedReason("Waiting on sanitized card transaction dump approval from Data Protection Office.")
                 .project(rtf)
                 .reporter(pmSarah)
                 .assignee(devAlex)
                 .build());
 
-        // 5. Deployments & Approvals
+        // Demo Deployments & Approvals
         Deployment depDev = deploymentRepository.save(Deployment.builder()
                 .project(csg)
                 .version("v2.3.9")
@@ -253,7 +251,7 @@ public class DataInitializer implements CommandLineRunner {
                 .rollbackReason("Detected connection exhaustion on standby database replica. Immediate reversion executed.")
                 .build());
 
-        // 6. Risks & Mitigations
+        // Demo Risks & Mitigations
         Risk riskLatency = Risk.builder()
                 .title("Third-Party Liquidity Provider API Latency Degradation")
                 .description("Under market volatility, clearing house webhooks may experience latency spikes exceeding 4500ms.")
@@ -313,14 +311,13 @@ public class DataInitializer implements CommandLineRunner {
         riskCompliance.calculateScore();
         riskRepository.save(riskCompliance);
 
-        // 7. Audit Log Trail
-        auditService.log("system", AuditAction.USER_CREATED, "USER", admin.getId().toString(), "Bootstrap initial administrator account");
+        // Seed audit logs for demo actions
         auditService.log("pm_sarah", AuditAction.PROJECT_CREATED, "PROJECT", csg.getId().toString(), "Initialized project 'Core Settlement Gateway'");
         auditService.log("dev_alex", AuditAction.DEPLOYMENT_REQUESTED, "DEPLOYMENT", depProdReview.getId().toString(), "Requested production release for v2.4.0");
         auditService.log("rev_marcus", AuditAction.DEPLOYMENT_APPROVED, "DEPLOYMENT", depRtfApproved.getId().toString(), "Approved production release for v1.8.2");
         auditService.log("dev_alex", AuditAction.DEPLOYMENT_ROLLED_BACK, "DEPLOYMENT", depRolledBack.getId().toString(), "Rolled back v1.0.5 due to replica exhaustion");
         auditService.log("dev_alex", AuditAction.RISK_CREATED, "RISK", savedRiskLatency.getId().toString(), "Identified third-party liquidity latency vulnerability");
 
-        log.info("DeployGuard enterprise seed data initialization completed successfully!");
+        log.info("Demo data seeding completed successfully.");
     }
 }

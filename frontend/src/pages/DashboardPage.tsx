@@ -87,7 +87,28 @@ export const DashboardPage: React.FC = () => {
     );
   }
 
-  if (!data) return null;
+  if (!data) {
+    return (
+      <div className="rounded-lg bg-slate-900 border border-slate-800 p-8 text-center space-y-4 max-w-lg mx-auto my-12">
+        <div className="w-12 h-12 rounded-full bg-rose-500/10 border border-rose-500/20 text-rose-400 flex items-center justify-center mx-auto">
+          <AlertTriangle className="w-6 h-6" />
+        </div>
+        <div>
+          <h2 className="text-base font-semibold text-white">Dashboard Telemetry Unavailable</h2>
+          <p className="text-xs text-slate-400 mt-1">
+            Unable to retrieve dashboard metrics from DeployGuard backend. Please check connectivity or try again.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={loadData}
+          className="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold text-white bg-sky-600 hover:bg-sky-500 rounded-md transition shadow-xs"
+        >
+          <RotateCcw className="w-3.5 h-3.5" /> Retry Connection
+        </button>
+      </div>
+    );
+  }
 
   const hasUrgentItems =
     data.pendingDeployments > 0 || data.criticalRisks > 0 || data.overdueTasks > 0;

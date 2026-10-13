@@ -45,6 +45,12 @@ public class AuditLog {
     @Column(columnDefinition = "TEXT")
     private String description;
 
+    @Column(name = "prev_hash", length = 64)
+    private String prevHash;
+
+    @Column(name = "record_hash", length = 64)
+    private String recordHash;
+
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
     private Instant timestamp;

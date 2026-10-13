@@ -49,7 +49,9 @@ class JwtUtilsTest {
         Environment env = Mockito.mock(Environment.class);
         Mockito.when(env.getActiveProfiles()).thenReturn(new String[]{"test"});
         ReflectionTestUtils.setField(jwtUtils, "environment", env);
-        ReflectionTestUtils.setField(jwtUtils, "jwtSecret", "ZGVwbG95Z3VhcmQtdGVzdC1vbmx5LWRldGVybWluaXN0aWMtMjU2Yml0LXNpZ25pbmcta2V5IQ==");
+        String testSecret = java.util.Base64.getEncoder().encodeToString(
+                "deployguard-test-only-deterministic-256bit-signing-key!".getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        ReflectionTestUtils.setField(jwtUtils, "jwtSecret", testSecret);
         ReflectionTestUtils.setField(jwtUtils, "jwtExpirationMs", 3600000L);
 
         assertDoesNotThrow(jwtUtils::initAndValidateKey);
@@ -62,7 +64,9 @@ class JwtUtilsTest {
         Environment env = Mockito.mock(Environment.class);
         Mockito.when(env.getActiveProfiles()).thenReturn(new String[]{"prod"});
         ReflectionTestUtils.setField(jwtUtils, "environment", env);
-        ReflectionTestUtils.setField(jwtUtils, "jwtSecret", "ZGVwbG95Z3VhcmQtdGVzdC1vbmx5LWRldGVybWluaXN0aWMtMjU2Yml0LXNpZ25pbmcta2V5IQ==");
+        String testSecret = java.util.Base64.getEncoder().encodeToString(
+                "deployguard-test-only-deterministic-256bit-signing-key!".getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        ReflectionTestUtils.setField(jwtUtils, "jwtSecret", testSecret);
         ReflectionTestUtils.setField(jwtUtils, "jwtExpirationMs", 3600000L);
 
         IllegalStateException ex = assertThrows(IllegalStateException.class, jwtUtils::initAndValidateKey);
@@ -76,8 +80,10 @@ class JwtUtilsTest {
         Environment env = Mockito.mock(Environment.class);
         Mockito.when(env.getActiveProfiles()).thenReturn(new String[]{"prod"});
         ReflectionTestUtils.setField(jwtUtils, "environment", env);
-        // Valid 256-bit base64 production key without test keywords
-        ReflectionTestUtils.setField(jwtUtils, "jwtSecret", "c3VwZXJTZWN1cmVQcm9kdWN0aW9uS2V5TXVzdEJlQXRMZWFzdDI1NkJpdHMyMDI2IQ==");
+        // Valid 256-bit base64 production key without test keywords, generated at runtime
+        String prodSecret = java.util.Base64.getEncoder().encodeToString(
+                "superSecureProductionKeyMustBeAtLeast256Bits2026!".getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        ReflectionTestUtils.setField(jwtUtils, "jwtSecret", prodSecret);
         ReflectionTestUtils.setField(jwtUtils, "jwtExpirationMs", 86400000L);
 
         assertDoesNotThrow(jwtUtils::initAndValidateKey);

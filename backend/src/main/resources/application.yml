@@ -33,6 +33,14 @@ app:
     expiration-ms: ${JWT_EXPIRATION_MS:86400000} # 24 hours
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173,http://localhost:3000,http://localhost:80}
+  security:
+    trusted-proxies: ${TRUSTED_PROXIES:127.0.0.1,::1,0:0:0:0:0:0:0:1}
+    initial-admin:
+      username: ${INITIAL_ADMIN_USERNAME:admin}
+      email: ${INITIAL_ADMIN_EMAIL:admin@deployguard.internal}
+      password: ${INITIAL_ADMIN_PASSWORD:}
+  demo:
+    seed-data: ${SEED_DEMO_DATA:false}
 
 management:
   endpoints:

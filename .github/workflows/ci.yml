@@ -20,18 +20,12 @@ jobs:
         with:
           fetch-depth: 0
 
-      # gitleaks-action@v2 constructs a commit range (${baseRef}^..${headRef}) on push events.
-      # When pushing an initial commit, a new branch, or following a force-push, the baseRef parent
-      # is missing or unreachable, causing git log to abort with "fatal: ambiguous argument... unknown revision".
-      # Overriding GITHUB_EVENT_NAME to workflow_dispatch instructs gitleaks-action to execute a full-history
-      # scan (gitleaks detect) over the fetch-depth: 0 tree, auditing all commits without skipping or erroring.
       - name: Run Gitleaks Secret Scanner
         uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITLEAKS_ENABLE_SUMMARY: true
           GITLEAKS_ENABLE_UPLOAD_ARTIFACT: true
-          GITHUB_EVENT_NAME: workflow_dispatch
           GITLEAKS_CONFIG: .gitleaks.toml
 
       - name: Audit Frontend Dependencies
@@ -106,6 +100,10 @@ jobs:
       - name: Install Frontend Dependencies
         working-directory: ./frontend
         run: npm ci
+
+      - name: Run Frontend Linter (Oxlint)
+        working-directory: ./frontend
+        run: npm run lint
 
       - name: Build React Production Bundle
         working-directory: ./frontend

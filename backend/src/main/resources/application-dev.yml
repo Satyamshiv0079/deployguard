@@ -22,6 +22,14 @@ app:
   jwt:
     secret: ${JWT_SECRET}
     expiration-ms: 86400000
+  security:
+    trusted-proxies: 127.0.0.1,::1,0:0:0:0:0:0:0:1
+    initial-admin:
+      username: admin
+      email: admin@deployguard.internal
+      password: ${INITIAL_ADMIN_PASSWORD:}
+  demo:
+    seed-data: ${SEED_DEMO_DATA:true}
 
 logging:
   level:

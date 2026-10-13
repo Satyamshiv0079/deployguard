@@ -33,4 +33,15 @@ public class AuditLogController {
         PagedResponse<AuditLogResponse> response = auditService.getAuditLogs(username, action, entityType, pageable);
         return ResponseEntity.ok(ApiResponse.ok(response));
     }
+
+    @GetMapping("/verify")
+    @PreAuthorize("hasAnyRole('ADMIN', 'REVIEWER')")
+    @Operation(summary = "Cryptographically verify tamper-evident hash chain across all audit log records")
+    public ResponseEntity<ApiResponse<Boolean>> verifyAuditIntegrity() {
+        boolean verified = auditService.verifyIntegrity();
+        String message = verified
+                ? "Cryptographic audit trail integrity verified: zero records altered or deleted."
+                : "AUDIT INTEGRITY ALERT: Tampering or broken hash chain detected!";
+        return ResponseEntity.ok(ApiResponse.ok(verified, message));
+    }
 }

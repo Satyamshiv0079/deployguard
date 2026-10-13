@@ -1,29 +1,49 @@
 #!/usr/bin/env bash
 # DeployGuard Git Pre-Commit Hook - Secrets Leakage Prevention
+# Scans exact staged content before commit to prevent credential exposure.
 # Activate via: git config core.hooksPath .githooks
 
-echo "Running DeployGuard pre-commit secrets scan..."
+echo "Running DeployGuard pre-commit secrets scan on staged content..."
 
-PATTERNS=(
-  "AKIA[0-9A-Z]{16}"
-  "ghp_[0-9a-zA-Z]{36}"
-  "github_pat_[0-9a-zA-Z_]{82}"
-  "-----BEGIN (RSA|EC|DSA|OPENSSH|PGP) PRIVATE KEY-----"
-  "Bearer[[:space:]]+eyJ[A-Za-z0-9_-]+\.eyJ"
-  "https://hooks\.slack\.com/services/"
-)
+# 1. Prefer native gitleaks scanner if available
+GITLEAKS_CMD=""
+if command -v gitleaks >/dev/null 2>&1; then
+  GITLEAKS_CMD="gitleaks"
+elif [ -x "./tools/gitleaks/gitleaks" ]; then
+  GITLEAKS_CMD="./tools/gitleaks/gitleaks"
+elif [ -x "./tools/gitleaks/gitleaks.exe" ]; then
+  GITLEAKS_CMD="./tools/gitleaks/gitleaks.exe"
+fi
 
-FAILED=0
-for pattern in "${PATTERNS[@]}"; do
-  if git diff --cached --name-only -z | xargs -0 grep -E -n "$pattern" /dev/null 2>/dev/null; then
-    echo "CRITICAL: Potential credential matching '$pattern' found in staged changes! [REDACTED]"
-    FAILED=1
+if [ -n "$GITLEAKS_CMD" ]; then
+  echo "Invoking $GITLEAKS_CMD protect --staged..."
+  if ! "$GITLEAKS_CMD" protect --staged --verbose --redact; then
+    echo "ERROR: Commit rejected by Gitleaks. Secret detected in staged changes."
+    exit 1
   fi
-done
+fi
 
-if [ $FAILED -ne 0 ]; then
-  echo "Commit rejected due to potential secret leakage."
-  exit 1
+# 2. Exact staged content pattern verification using git diff --cached
+# Inspect only added lines (lines starting with + but not +++) from staged diff, excluding scanner config itself
+STAGED_ADDITIONS=$(git diff --cached -U0 -- . ':(exclude).gitleaks.toml' | grep '^\+[^+]' || true)
+
+if [ -n "$STAGED_ADDITIONS" ]; then
+  PATTERNS=(
+    "AKIA[0-9A-Z]{16}"
+    "ghp_[0-9a-zA-Z]{36}"
+    "github_pat_[0-9a-zA-Z_]{82}"
+    "-----BEGIN (RSA|EC|DSA|OPENSSH|PGP) PRIVATE KEY-----"
+    "Bearer[[:space:]]+eyJ[A-Za-z0-9_-]+\.eyJ"
+    "https://hooks\.slack\.com/services/"
+  )
+
+  for pattern in "${PATTERNS[@]}"; do
+    if echo "$STAGED_ADDITIONS" | grep -E -q -- "$pattern"; then
+      echo "CRITICAL: Potential secret matching pattern '$pattern' found in staged changes! [REDACTED]"
+      echo "Commit rejected due to potential secret leakage."
+      exit 1
+    fi
+  done
 fi
 
 echo "Pre-commit secret scan passed."
